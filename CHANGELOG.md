@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.7 — 2026-10-30
+
 - `ef0100/viem`: `guardAccount(account, guard, context)` wraps a viem LocalAccount so `sign`, `signAuthorization`,
   `signTransaction`, `signMessage` and `signTypedData` are judged from the bytes they would sign; a refusal throws
   `GuardRefusal` before the key is asked. viem is an optional peer dependency. Also `typedDataPreimage`.
