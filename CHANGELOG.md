@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.3 — 2026-10-30
+
 - Tests: guard invariants over random authorizations (`test/invariants.test.ts`): never chain_id 0, never a nonce other
   than the live one, never an unlisted delegate, never more than `maxPerWindow` in any window, and only the clear once
   the key's own account has code; plus the control that an allowed delegate at the live nonce is signed.
