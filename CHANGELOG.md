@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `pnpm bench`: median and p99 per call for the guard and the decoders (`bench/guard.bench.mjs`).
+
 ## 0.1.2 — 2026-10-30
 
 - `watch <address…>`: runs `scan` every slot (12 s, or `--every`) and prints one line, in UTC, when a delegation
