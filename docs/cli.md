@@ -47,6 +47,31 @@ its last known state, and the outage is printed once when it starts and once whe
   only, or http to localhost for a local relay; redirects are refused. The URL is a credential and is never printed
   (only its host, when a delivery fails). A failed delivery is printed and the watch keeps running.
 
+### In GitHub Actions
+
+`ef0100dev/ef0100` is also an action that runs `scan` and fails the job when an address is delegated. On a schedule
+it is a cheap alarm for treasury and hot-wallet addresses:
+
+```yaml
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+jobs:
+  delegations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ef0100dev/ef0100@v0.1.5
+        with:
+          addresses: |
+            0x1111111111111111111111111111111111111111
+            0x2222222222222222222222222222222222222222
+          # chains: ethereum,base
+          # allow: 0x… (a delegate you set on purpose)
+```
+
+Exit 1 fails the job for a delegation, 2 for a sweeper-like or known-malicious delegate. A chain that does not answer
+is a warning unless `fail-on-unreachable: "true"`. Every input is checked before it reaches the shell.
+
 ### `decode <txhash|raw>`
 
 Decodes any transaction, including a blob transaction in its network form. For type 4 it rebuilds each authority's

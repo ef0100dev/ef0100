@@ -43,3 +43,9 @@ jobs:
           npx ef0100 replay --speed 0 > replay.txt
           grep -q "50 signed. 1 applied." replay.txt
           node --input-type=module -e "import { decodeTransaction, Guard } from 'ef0100'; console.log(typeof decodeTransaction, typeof Guard)"
+      - name: The GitHub Action runs against a live address
+        if: matrix.node == 24
+        uses: ./
+        with:
+          addresses: "0x28C6c06298d514Db089934071355E5743bf21d60"
+          chains: ethereum
