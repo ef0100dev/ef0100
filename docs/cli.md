@@ -116,6 +116,15 @@ curl -s 127.0.0.1:8787/check -H 'content-type: application/json' \
   trail; no key material and no request bytes.
 - With the hot-wallet profile every request must carry `ownCode` (`"0x"` when the key's account has none), or it is
   refused with `CONTEXT_MISSING`.
+- `--rpc <url>` (repeatable) makes the server read the signer's own code itself, per request, from those endpoints:
+  every answer must match and at least `--quorum` must answer (default 2). A request's own `ownCode`, if it sends one,
+  counts as one more answer, so a caller that says `"0x"` while the endpoints see a delegation is refused. No signer,
+  or no agreement, means no own code and `CONTEXT_MISSING`. The response adds `ownCodeAnswers` (endpoints by host
+  only). Malformed requests are rejected before any endpoint is asked.
+
+  ```sh
+  npx ef0100 guard serve --rpc "$RPC_A" --rpc "$RPC_B" --rpc "$RPC_C" --log
+  ```
 - A request whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, or that carries an `Origin` header, gets 403:
   a web page cannot reach it through DNS rebinding. Bodies above 256 KiB get 413, malformed ones 400.
 

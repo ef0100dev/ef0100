@@ -5,6 +5,12 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `guard serve --rpc <url>` (repeatable, with `--quorum`): the server reads the signer's own code itself on every
+  request, every answer must match, and the request's own `ownCode` counts as one more answer. Responses add
+  `ownCodeAnswers`. Library: `createGuardServer(guard, { ownCode: { urls, quorum } })`, `serverOwnCode`. Malformed
+  requests are now rejected before anything else happens.
+- Tests: an own-code agreement invariant run through the guard (2,000 runs in CI, 100,000 nightly).
+
 ## 0.1.11 — 2026-10-30
 
 - Changed: `readOwnCode`'s `quorum` is now how many endpoints must answer, and every answer must match. In 0.1.10 a
