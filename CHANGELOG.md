@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.5 — 2026-10-30
+
 - `action.yml`: `uses: ef0100dev/ef0100@<tag>` runs `scan` in GitHub Actions and fails the job on a delegation; inputs are
   validated before they reach the shell, an unanswered chain is a warning by default.
 - CI: a nightly fuzz run (`.github/workflows/fuzz.yml`): both fuzz suites and the guard invariants at 100,000 runs per
