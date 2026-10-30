@@ -80,12 +80,14 @@ const ownCode = await readOwnCode(address, [alchemyUrl, infuraUrl, ownNodeUrl]);
 guard.check(preimage, { as: "preimage" }, { signer: address, nonce, ownCode });
 ```
 
-By default every endpoint must answer, and with the same bytes. `{ quorum: n }` accepts a value that `n` of them
-returned, as long as no other value also reached `n`, so two-against-two never picks a side. An endpoint that is down
-or answers something that is not hex counts as no answer. Anything short of agreement throws `OwnCodeUnconfirmed`,
-which names each endpoint by host only (no path, no key) with what it returned. Let the error stop the request, or pass
-no `ownCode`: the `hotWallet` profile then refuses with `CONTEXT_MISSING`. Don't fall back to `"0x"`. Use independent
-providers; three URLs on one provider agree with each other by construction.
+Every endpoint that answers must return the same bytes, and at least `quorum` must answer (default: all of them). Two
+answers that differ always throw, whatever the count: an endpoint that lags or lies can make the guard refuse, never
+make it sign. An endpoint that is down or answers something that is not hex counts as no answer, so `{ quorum: 2 }`
+over three endpoints rides out one outage. `OwnCodeUnconfirmed` carries every answer (`.answers`, endpoints named by
+host only, no path or key). Let it stop the request, or pass no `ownCode`: the `hotWallet` profile then refuses with
+`CONTEXT_MISSING`. Don't fall back to `"0x"`. Use independent providers; three URLs on one provider agree with each
+other by construction. `ownCodeAnswers` and `agreedOwnCode` are the two halves, for callers that want to show the
+answers; `npx ef0100 owncode <address> --rpc … --rpc …` does the same from a shell.
 
 ## Audit trail
 

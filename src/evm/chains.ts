@@ -107,12 +107,12 @@ export function findChain(keyOrId: string | number, chains: readonly Chain[] = C
 export function withRpcOverrides(
   chains: readonly Chain[] = CHAINS,
   env: Record<string, string | undefined> = typeof process === "undefined" ? {} : process.env,
-  overrides: Record<string, string> = {},
+  overrides: Record<string, string | string[]> = {},
 ): Chain[] {
   return chains.map((c) => {
-    const mine = [overrides[c.key], overrides[String(c.id)], env[`EF0100_RPC_${c.key.toUpperCase()}`]].filter(
-      (u): u is string => !!u,
-    );
+    const mine = [overrides[c.key], overrides[String(c.id)], env[`EF0100_RPC_${c.key.toUpperCase()}`]]
+      .flat()
+      .filter((u): u is string => !!u);
     if (!mine.length) return c;
     return { ...c, rpc: [...mine, ...c.rpc], archive: [...mine, ...(c.archive ?? [])] };
   });

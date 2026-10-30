@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Hex } from "../src/evm/bytes.ts";
 import { authorizationPreimage } from "../src/evm/eip7702.ts";
-import { OwnCodeUnconfirmed, readOwnCode } from "../src/evm/owncode.ts";
+import { OwnCodeUnconfirmed, agreedOwnCode, ownCodeAnswers, readOwnCode } from "../src/evm/owncode.ts";
 import { Guard, profiles } from "../src/guard/policy.ts";
 
 const B14 = "0x28C6c06298d514Db089934071355E5743bf21d60";
@@ -66,16 +66,16 @@ describe("readOwnCode", () => {
     expect(v.reasons.map((r) => r.code)).toContain("CONTEXT_MISSING");
   });
 
-  it("with a quorum, takes the value enough endpoints agree on, so the lie is outvoted", async () => {
-    const { fetch } = endpoints({ [A]: "0x", [B]: DELEGATED, [C]: DELEGATED });
-    await expect(readOwnCode(B14, [A, B, C], { fetch, quorum: 2 })).resolves.toBe(DELEGATED);
-  });
-
-  it("never picks a side when two values both reach the quorum", async () => {
-    const D = "https://d.example/rpc";
-    const { fetch } = endpoints({ [A]: "0x", [B]: "0x", [C]: DELEGATED, [D]: DELEGATED });
-    await expect(readOwnCode(B14, [A, B, C, D], { fetch, quorum: 2 })).rejects.toBeInstanceOf(OwnCodeUnconfirmed);
-    await expect(readOwnCode(B14, [A, B, C, D], { fetch, quorum: 1 })).rejects.toBeInstanceOf(OwnCodeUnconfirmed);
+  it("with a quorum, tolerates endpoints that don't answer, never ones that disagree", async () => {
+    const down = endpoints({ [A]: new Error("connect ECONNREFUSED"), [B]: DELEGATED, [C]: DELEGATED });
+    await expect(readOwnCode(B14, [A, B, C], { fetch: down.fetch, quorum: 2 })).resolves.toBe(DELEGATED);
+    const lagging = endpoints({ [A]: DELEGATED, [B]: "0x", [C]: "0x" });
+    const e = (await readOwnCode(B14, [A, B, C], { fetch: lagging.fetch, quorum: 1 }).catch(
+      (x: unknown) => x,
+    )) as OwnCodeUnconfirmed;
+    expect(e).toBeInstanceOf(OwnCodeUnconfirmed);
+    expect(e.message).toContain("endpoints disagree");
+    expect(e.answers.map((a) => a.code)).toEqual([DELEGATED, "0x", "0x"]);
   });
 
   it("an endpoint that is down or answers garbage counts as no answer", async () => {
@@ -112,5 +112,38 @@ describe("readOwnCode", () => {
     await expect(readOwnCode(B14, [A, B], { fetch, quorum: 0 })).rejects.toThrow(TypeError);
     await expect(readOwnCode(B14, [A, B], { fetch, quorum: 1.5 })).rejects.toThrow(TypeError);
     expect(seen).toEqual([]);
+  });
+});
+
+describe("ownCodeAnswers and agreedOwnCode", () => {
+  it("returns every endpoint's answer, named by host only", async () => {
+    const { fetch } = endpoints({ [A]: "0x", [B]: new Error("HTTP 504") });
+    expect(await ownCodeAnswers(B14, [A, B], { fetch })).toEqual([
+      { endpoint: "https://a.example", code: "0x" },
+      { endpoint: "https://b.example", error: "HTTP 504" },
+    ]);
+  });
+
+  it("says how many answered when too few did", () => {
+    expect(() =>
+      agreedOwnCode([
+        { endpoint: "a", code: "0x" },
+        { endpoint: "b", error: "down" },
+      ]),
+    ).toThrow("1 of 2 answered, 2 needed");
+    expect(
+      agreedOwnCode(
+        [
+          { endpoint: "a", code: "0x" },
+          { endpoint: "b", error: "down" },
+        ],
+        1,
+      ),
+    ).toBe("0x");
+  });
+
+  it("rejects a quorum that is not a whole number of at least 1", () => {
+    for (const q of [0, -1, 1.5, NaN])
+      expect(() => agreedOwnCode([{ endpoint: "a", code: "0x" }], q)).toThrow(TypeError);
   });
 });
