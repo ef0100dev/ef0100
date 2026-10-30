@@ -23,6 +23,28 @@ await sign(preimage, { signer, nonce, ownCode }); // throws GuardRefusal
 `wrap` copies the input before judging it and signs that copy, so a buffer the caller changes afterwards is not what
 gets signed.
 
+## With viem
+
+`ef0100/viem` wraps a viem `LocalAccount`. Every signing method runs the guard on the exact bytes it would sign, and a
+refusal throws before the key is asked. viem is an optional peer dependency; the main entry point does not load it.
+
+```ts
+import { privateKeyToAccount } from "viem/accounts";
+import { Guard, profiles } from "ef0100";
+import { guardAccount } from "ef0100/viem";
+
+const account = guardAccount(privateKeyToAccount(key), new Guard(profiles.hotWallet), async (kind) => ({
+  nonce: kind === "authorization" ? await client.getTransactionCount({ address, blockTag: "pending" }) : undefined,
+  ownCode: (await client.getCode({ address })) ?? "0x",
+}));
+await account.signAuthorization({ chainId: 1, address: sweeper, nonce }); // throws GuardRefusal
+```
+
+`sign({ hash })` is judged as a bare digest (refused unless the policy allows them), `signAuthorization` as its
+`0x05` preimage, `signTransaction` as the serialized unsigned transaction, `signMessage` as the EIP-191 bytes and
+`signTypedData` as `0x19 0x01 ‖ domainSeparator ‖ structHash` (`typedDataPreimage`, checked against viem's
+`hashTypedData` in the tests).
+
 ## The context
 
 | Field | Used for |

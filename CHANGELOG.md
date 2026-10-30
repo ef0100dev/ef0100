@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `ef0100/viem`: `guardAccount(account, guard, context)` wraps a viem LocalAccount so `sign`, `signAuthorization`,
+  `signTransaction`, `signMessage` and `signTypedData` are judged from the bytes they would sign; a refusal throws
+  `GuardRefusal` before the key is asked. viem is an optional peer dependency. Also `typedDataPreimage`.
+
 ## 0.1.6 — 2026-10-30
 
 - Changed: the `hotWallet` profile now requires `ctx.ownCode` on every request (`requireOwnCode`, new policy field) and
