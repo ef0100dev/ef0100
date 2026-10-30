@@ -24,6 +24,10 @@ inputs:
     description: Fail when a chain does not answer (exit 69) instead of warning.
     required: false
     default: "false"
+  cross-check:
+    description: Ask every endpoint of each chain; one that sees a delegation is enough (ef0100 0.1.13 or later).
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
@@ -35,6 +39,7 @@ runs:
         EF_ALLOW: ${{ inputs.allow }}
         EF_VERSION: ${{ inputs.version }}
         EF_STRICT: ${{ inputs.fail-on-unreachable }}
+        EF_CROSS: ${{ inputs.cross-check }}
       run: |
         set +e -uo pipefail
         [[ "$EF_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must be x.y.z"; exit 64; }
@@ -52,6 +57,11 @@ runs:
           [[ "$d" =~ ^0x[0-9a-fA-F]{40}$ ]] || { echo "::error::not an address in allow: ${d:0:64}"; exit 64; }
           args+=(--allow "$d")
         done
+        case "$EF_CROSS" in
+          true) args+=(--cross-check) ;;
+          false | "") ;;
+          *) echo "::error::cross-check is true or false"; exit 64 ;;
+        esac
         cd "${RUNNER_TEMP:-/tmp}"
         npm view "ef0100@$EF_VERSION" version >/dev/null 2>&1 || { echo "::error::ef0100@$EF_VERSION is not on npm"; exit 70; }
         npx -y "ef0100@$EF_VERSION" scan "${args[@]}"

@@ -53,3 +53,11 @@ jobs:
           addresses: "0x28C6c06298d514Db089934071355E5743bf21d60"
           chains: ethereum
           version: "0.1.4"
+      - name: The GitHub Action asks every endpoint with cross-check
+        if: matrix.node == 24
+        uses: ./
+        with:
+          addresses: "0x28C6c06298d514Db089934071355E5743bf21d60"
+          chains: ethereum,base
+          version: "0.1.15"
+          cross-check: "true"

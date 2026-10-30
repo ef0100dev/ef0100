@@ -72,6 +72,7 @@ jobs:
             0x2222222222222222222222222222222222222222
           # chains: ethereum,base
           # allow: 0x… (a delegate you set on purpose)
+          # cross-check: "true" (ask every endpoint; one that sees a delegation is enough)
 ```
 
 Exit 1 fails the job for a delegation, 2 for a sweeper-like or known-malicious delegate. A chain that does not answer
