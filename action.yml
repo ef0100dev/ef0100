@@ -19,7 +19,7 @@ inputs:
   version:
     description: The ef0100 version to run from npm.
     required: false
-    default: "0.1.4"
+    default: "0.1.5"
   fail-on-unreachable:
     description: Fail when a chain does not answer (exit 69) instead of warning.
     required: false
@@ -53,6 +53,7 @@ runs:
           args+=(--allow "$d")
         done
         cd "${RUNNER_TEMP:-/tmp}"
+        npm view "ef0100@$EF_VERSION" version >/dev/null 2>&1 || { echo "::error::ef0100@$EF_VERSION is not on npm"; exit 70; }
         npx -y "ef0100@$EF_VERSION" scan "${args[@]}"
         code=$?
         if [ "$code" = 69 ] && [ "$EF_STRICT" != "true" ]; then
