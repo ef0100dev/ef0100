@@ -1,0 +1,45 @@
+{
+ "authority": "0x28C6c06298d514Db089934071355E5743bf21d60",
+ "label": "Binance 14 (Ethereum hot wallet)",
+ "source": "eth_getCode / eth_getTransactionCount at historical blocks via gateway.tenderly.co/public/mainnet, rpc.flashbots.net, eth.drpc.org (publicnode refuses archive)",
+ "points": [
+  {
+   "block": 26300752,
+   "utc": "2026-10-29T20:20:47Z",
+   "code": "0x",
+   "nonce_after_block": 18914808
+  },
+  {
+   "block": 26300753,
+   "utc": "2026-10-29T20:20:59Z",
+   "code": "0xef010063e842b054bd624a465454d533c33f573e9c6fae",
+   "nonce_after_block": 18914810,
+   "note": "Binance tx nonce 18914808 at index 133, then attacker type-4 at index 138 consumed nonce 18914809 via authorization; Binance's next own tx uses 18914810 (nonce gap fingerprint)"
+  },
+  {
+   "block": 26300754,
+   "code": "0xef010063e842b054bd624a465454d533c33f573e9c6fae",
+   "nonce_after_block": 18914811
+  },
+  {
+   "block": 26301895,
+   "code": "0xef010063e842b054bd624a465454d533c33f573e9c6fae",
+   "nonce_after_block": 18914903
+  },
+  {
+   "block": 26301896,
+   "utc": "2026-10-30T00:10:35Z",
+   "code": "0x",
+   "nonce_after_block": 18914905,
+   "note": "Binance 14 self-sponsored type-4 0xafbf94c9... tx nonce 18914903 with authorization {address: 0x0, chainId: 1, nonce: 18914904} clears code"
+  },
+  {
+   "block": "latest@2026-10-30T02:29Z",
+   "code": "0x",
+   "nonce": 18915199,
+   "balance_wei": "811187601359496542"
+  }
+ ],
+ "delegate": "0x63e842B054Bd624a465454D533C33F573e9c6fAe",
+ "delegation_lifetime": "2026-10-29T20:20:59Z -> 2026-10-30T00:10:35Z (blocks 26300753..26301895)"
+}

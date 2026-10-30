@@ -1,0 +1,185 @@
+{
+  "note": "Every row is a mainnet transaction. Amounts and blocks were read from chain data (eth_getTransactionByHash, receipts, Blockscout token transfers); drain_ledger.csv has the per-token amounts.",
+  "chainId": 1,
+  "authority": "0x28C6c06298d514Db089934071355E5743bf21d60",
+  "authorityLabel": "Binance 14",
+  "operator": "0x7C8601d4645b93cea45F71e118A729332e6B5CA0",
+  "delegate": "0x63e842B054Bd624a465454D533C33F573e9c6fAe",
+  "delegateV1": "0x19beE294A6DaAb49c9e5Ab69A5Da6C035C70f2bf",
+  "smartAccount": "0xEe7aE85f2Fe2239E27D9c1E23fFFe168D63b4055",
+  "collectors": {
+    "R1": "0x5227f603C1eE34CE3C06eFe6477003BDfCCB2f8c",
+    "R2": "0xA97bF7836F8A08F9Ed91D41453D371493FAE8d10"
+  },
+  "delegation": {
+    "tx": "0xad99264d5532ae0dd04b2004eebda05f25657e70dacb764f7ac8d4ccd051298b",
+    "block": 26300753,
+    "index": 138,
+    "utc": "2026-10-29T20:20:59Z",
+    "authorityNonceAtTx": 18914809,
+    "ownTxSameBlock": {
+      "tx": "0xca63641eaeb49779d80ba11ce4fe894d635f2e98c032e9efd5bb4ce304ae56da",
+      "index": 133,
+      "nonce": 18914808
+    },
+    "windowOpenedUtc": "2026-10-29T20:17:47Z",
+    "windowOpenedBlock": 26300737,
+    "windowClosedUtc": "2026-10-29T20:24:23Z",
+    "windowClosedBlock": 26300770
+  },
+  "clear": {
+    "tx": "0xafbf94c92a8d749988411669fa14d4f8866d9b4420b4ebd299f28e958dac7209",
+    "block": 26301896,
+    "utc": "2026-10-30T00:10:35Z",
+    "senderNonce": 18914903,
+    "gasUsed": 36800
+  },
+  "calls": [
+    {
+      "tx": "0x53bd38b816c23e74134786c29a8c18d792777998a3b9326047b583100e88e2f3",
+      "block": 26300770,
+      "utc": "2026-10-29T20:24:23Z",
+      "kind": "sweep",
+      "to": "R1",
+      "label": "sweep #1"
+    },
+    {
+      "tx": "0xdc102dd89dded5a83f1008906883ffb7c81ff3b7d7965d8c7277d170b5e17481",
+      "block": 26300855,
+      "utc": "2026-10-29T20:41:23Z",
+      "kind": "callExecute",
+      "to": "R1",
+      "label": "smart account drained (1/2)"
+    },
+    {
+      "tx": "0x3b9625b33788daeba68420459ae15bf05c5b3639ccfb8e92067e84b560479ca7",
+      "block": 26300945,
+      "utc": "2026-10-29T20:59:47Z",
+      "kind": "callExecute",
+      "to": "R1",
+      "label": "smart account drained (2/2)"
+    },
+    {
+      "tx": "0x31c4c9fe287d54fb9d3b79980477a8c793a11f774b98d0a9a92de1dad888a91d",
+      "block": 26300968,
+      "utc": "2026-10-29T21:04:23Z",
+      "kind": "sweep",
+      "to": "R1",
+      "label": "sweep #2"
+    },
+    {
+      "tx": "0x55ba4dabc41b468e580751373ad31acdee6f5ba398682df2c93e5a8340870556",
+      "block": 26301167,
+      "utc": "2026-10-29T21:44:11Z",
+      "kind": "sweep",
+      "to": "R1",
+      "label": "sweep #3"
+    },
+    {
+      "tx": "0x4a4aed833556814c16fe176fc8abc70ce124eadc73da3bcdf42a67ef44f9ad6b",
+      "block": 26301444,
+      "utc": "2026-10-29T22:39:35Z",
+      "kind": "sweep",
+      "to": "R2",
+      "label": "sweep #4"
+    },
+    {
+      "tx": "0x5059928573a6e4ed48dda491648cf619c2368e81fc6cce3f9e97a779ad521f1f",
+      "block": 26301729,
+      "utc": "2026-10-29T23:36:47Z",
+      "kind": "poll",
+      "to": "R2",
+      "label": "empty sweep"
+    },
+    {
+      "tx": "0xe016ae73ea9226464435b2b6203bbbb8e10d3c2d68f4facee2d708a47606af23",
+      "block": 26301732,
+      "utc": "2026-10-29T23:37:23Z",
+      "kind": "poll",
+      "to": "R2",
+      "label": "empty sweep"
+    },
+    {
+      "tx": "0x833202076503f1c27852294262343011815038c07708d362f5bb0d8104bc7bda",
+      "block": 26301734,
+      "utc": "2026-10-29T23:37:47Z",
+      "kind": "poll",
+      "to": "R2",
+      "label": "empty sweep"
+    },
+    {
+      "tx": "0x698dac6c9133842177ceba0e8ba7faa6b39bc99cbc12910d33e690aae1f139f3",
+      "block": 26301736,
+      "utc": "2026-10-29T23:38:23Z",
+      "kind": "poll",
+      "to": "R2",
+      "label": "empty sweep"
+    },
+    {
+      "tx": "0xac08e5693512be1090898f1c42e86fc9f32c6f3a326c8ade5b93af26b831da19",
+      "block": 26301819,
+      "utc": "2026-10-29T23:54:59Z",
+      "kind": "poll",
+      "to": "R2",
+      "label": "empty sweep"
+    },
+    {
+      "tx": "0x4395d51dc3f3c51230329efc3548f74edbced353ff3f795c517cc57fa650f89b",
+      "block": 26301828,
+      "utc": "2026-10-29T23:56:47Z",
+      "kind": "sweep",
+      "to": "R2",
+      "label": "final sweep"
+    }
+  ],
+  "refills": [
+    {
+      "tx": "0xf56867f0b81faa1ac92fd99492398ff089886aa11fb41288529178813062a1c6",
+      "block": 26301161,
+      "utc": "2026-10-29T21:42:59Z",
+      "symbol": "USDT",
+      "amount": "200000000",
+      "from": "0x22132139bF7f3921b1CadEaB931f4FBf7bf2BC9e",
+      "sweptBy": "0x55ba4dabc41b468e580751373ad31acdee6f5ba398682df2c93e5a8340870556"
+    },
+    {
+      "tx": "0xc1f0fdb94fb909e3f12aa345e81c05d4adb0ea2d3243e844920d62a2936f4ae0",
+      "block": 26301823,
+      "utc": "2026-10-29T23:55:47Z",
+      "symbol": "ETH",
+      "amount": "2961.990881554978",
+      "gasUsed": 21062,
+      "from": "0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4",
+      "sweptBy": "0x4395d51dc3f3c51230329efc3548f74edbced353ff3f795c517cc57fa650f89b"
+    }
+  ],
+  "freezes": [
+    {
+      "utc": "2026-10-29T21:01:35Z",
+      "issuer": "Tether",
+      "what": "blacklists R1 (first freeze)"
+    },
+    {
+      "utc": "2026-10-29T21:04:59Z",
+      "issuer": "Circle",
+      "what": "blacklists R1, freezing 823M USDC in place"
+    },
+    {
+      "utc": "2026-10-29T22:06:23Z",
+      "issuer": "Tether",
+      "what": "blacklists the delegated wallet itself; sweep #4's USDT transfer reverts"
+    }
+  ],
+  "eoaLog": {
+    "tx": "0x53bd38b816c23e74134786c29a8c18d792777998a3b9326047b583100e88e2f3",
+    "address": "0x28c6c06298d514db089934071355e5743bf21d60",
+    "topics": [
+      "0x394e1e4ba4d16d4e4c835649c554cd62437474ccefbb493591e6af3ce7c6c479",
+      "0x000000000000000000000000904567252d8f48555b7447c67dca23f0372e16be"
+    ],
+    "data": "0x0000000000000000000000000000000000000000000000000000000000000002",
+    "logIndex": 545,
+    "event": "SweepItemFailed(address,uint8)",
+    "note": "An EOA cannot emit logs. This one ran the sweeper's code: the KITE transfer reverted (code 2)."
+  }
+}

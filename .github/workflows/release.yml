@@ -1,0 +1,96 @@
+name: release
+# Publishes a tagged version to npm. Started by hand only, from the tag itself: Actions → release → Run workflow →
+# "Use workflow from" → Tags → v<version>. Tags and GitHub Releases never publish on their own.
+#
+# Two jobs. "build" checks out the tag, builds, tests and packs it with no publishing rights. "publish" holds the
+# OIDC token (npm trusted publishing, so no npm token is stored anywhere), runs no project code and no package
+# manager, and publishes exactly the tarball "build" made. Because the run itself is on the tag, the provenance
+# statement names the tag's commit. Actions are pinned to commit SHAs.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish, without the v (the run must be started from the tag v<version>)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      tarball: ${{ steps.pack.outputs.tarball }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+    steps:
+      - name: The run is on the tag, and the version is a version
+        env:
+          VERSION: ${{ inputs.version }}
+          REF: ${{ github.ref }}
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "not a version: $VERSION"; exit 1; }
+          [[ "$REF" == "refs/tags/v$VERSION" ]] || { echo "start this run from the tag v$VERSION, not $REF"; exit 1; }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: refs/tags/v${{ inputs.version }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - name: Tag matches package.json
+        env:
+          VERSION: ${{ inputs.version }}
+        run: test "$(node -p 'require("./package.json").version')" = "$VERSION"
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm test
+      - run: for d in 2026-10-29 registry solana; do (cd fixtures/$d && sha256sum -c SHA256SUMS) || exit 1; done
+      - id: pack
+        run: |
+          npm pack --ignore-scripts --pack-destination dist-pack
+          f=$(ls dist-pack/*.tgz)
+          echo "tarball=$(basename "$f")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$f" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: package
+          path: dist-pack/*.tgz
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing and provenance, in this job only
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: npm with trusted publishing (11.5.1 or later)
+        run: npm install -g npm@11.21.1 && npm --version
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: package
+      - name: The tarball is the one build packed
+        env:
+          TARBALL: ${{ needs.build.outputs.tarball }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+        run: echo "$SHA256  $TARBALL" | sha256sum -c -
+      - name: Publish (prereleases go to the "next" dist-tag)
+        env:
+          TARBALL: ${{ needs.build.outputs.tarball }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          tag=latest
+          [[ "$VERSION" == *-* ]] && tag=next
+          npm publish "./$TARBALL" --provenance --access public --tag "$tag"

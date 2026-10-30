@@ -1,0 +1,23 @@
+{
+ "source": "Flashbots Mempool Dumpster https://mempool-dumpster.flashbots.net/ethereum/mainnet/2026-10/2026-10-29.csv.zip (last-modified 2026-10-30T01:03:10Z; 11060 type-4 rows that day)",
+ "not_seen_in_public_mempool": {
+  "type4_delegation": "0xad99264d5532ae0dd04b2004eebda05f25657e70dacb764f7ac8d4ccd051298b",
+  "operator_0x7C86_rows": 0,
+  "operator_txs_onchain_oct29": 23,
+  "b16_theft_nonces_15703483_15703491_seen": 0,
+  "main_sweep_0x53bd38_seen": false,
+  "callExecute_0xdc102d_seen": false,
+  "sweep3_0x55ba4d_seen": false,
+  "final_sweep_0x4395d5_seen": false
+ },
+ "seen_in_public_mempool": {
+  "b14_own_txs_19:27-24:00": "651/651",
+  "b14_nonce_18914808_0xca6364": "first seen 20:20:52.594Z, included blk 26300753 (6.4s)",
+  "b14_nonce_18914810_0x5cb8ca": "first seen 20:21:04.540Z, blk 26300754",
+  "b16_routine_19:30-24:00": "727/743 (misses = 16 standard-template user withdrawals at 20:41-20:45)",
+  "refill_200M_USDT_0xf56867": "public (22.3s before inclusion)",
+  "refill_2961.99ETH_0xc1f0fd": "public (10.5s)"
+ },
+ "b14_nonce_18914809": "never broadcast publicly by Binance (pipeline went 808 -> 810)",
+ "btc_first_seen_blockcypher": "20:01:37.493Z (7636.8 BTC) ... 20:10:56.242Z (19.9 BTC); all confirmed 20:20:06Z blk 973732"
+}

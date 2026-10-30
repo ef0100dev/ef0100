@@ -1,0 +1,152 @@
+{
+ "note": "Raw Solana transactions (getTransaction, encoding base64) for real incidents, with the context each check needs. Labels are descriptive.",
+ "cases": [
+  {
+   "label": "Binance 2026-10-29 20:10:18Z hot wallet 5tzF -> fresh Affz 965,455.1 SOL (attacker leg)",
+   "slot": 463010532,
+   "blockTime": 1793304618,
+   "base64": "AeOaaQpRc7MKCSsA99iBUCE/D+GuoDztb9XyhhJ0JGfxny6wDAx6QJ6D0ngv5olbtDR+4hyrjnYeVaJeOLdOEg8BAAEDSMAbUFkAVFXZ3LDGvOzctPtbLqvBqagrVzkrqqQPBOaPoVX3TUnnRk+qDScEEiXy7FuKVjL8aO+wItV5RuwZyQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASGoLZYP4oAnBpXIQ1P5XnqUlh85AdQ6cmYcI725gU2EBAgIAAQwCAAAAADdIiBNuAwA=",
+   "userKeys": [
+    "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9"
+   ],
+   "policy": {
+    "require_nonce_authority": "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9",
+    "pre_balance_lamports": 1068373107280343,
+    "max_fraction": 0.2,
+    "fresh_destinations": [
+     "AffzFDKZbyMiU11zmVBoAqD25ugpr7xoWWyRyGigBEaU"
+    ]
+   },
+   "preBalances": [
+    1068373107280343,
+    0,
+    1
+   ],
+   "err": null
+  },
+  {
+   "label": "Binance 2026-10-29 20:30:42Z normal withdrawal-pipeline batch (baseline, durable nonce from own pool)",
+   "slot": 463016241,
+   "blockTime": 1793305842,
+   "base64": "AT4ltOFDvyYEbz7khr50PeV4+h+Lrs1GzJxEh6XjKRRM6lM0WazYqZYyEp5NwFCupRMmB9UQZjMZ0inzhezFdgMBAAMLSMAbUFkAVFXZ3LDGvOzctPtbLqvBqagrVzkrqqQPBOYv7GOzUqQ795Rb9rrLut4Dn3qGY56ShgSYd41e99PbqwTmryZYkqcd39St9O/xsn+hK2VHGBmDICGoNISc8urQYfSDCs4dr5/k60iibMjZ5SJetELIpZooTCt9qE2ZhAcrnDhP1MQP961IWEoepO83bHuFGUV4B4gAfDvg2vewksu/s4xSdqIRxrpmzH78KouhJiMmOElhgBNFYs/Dnz8h1zyHN7hAM+2pJ9mc8DE9fCqzx31r0XttF0YjrOnkbgu7WMbuex2pQB/U0/KtDtFKq43TAEUkAonzuGITFzPdKQan1RcZLFaO4IqEX3PSl4jPA1wxRbIas0TYBi6pQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAFabf33R8hy7eSmmbJTMvQWND0fX7mxRlgR5CCsKAnACwkDAQgABAQAAAAKAAkDQA0DAAAAAAAKAAUCkF8BAAkCAAIMAgAAAFiF+gQAAAAACQIAAwwCAAAAyFmLBwAAAAAJAgAEDAIAAACIdGMTAAAAAAkCAAUMAgAAAFiF+gQAAAAACQIABgwCAAAAyGJV7RQAAAAJAgAHDAIAAAAoeL8EAAAAAAkCAAcMAgAAALhGBQEAAAAACQIABQwCAAAA6AhnBwAAAAA=",
+   "userKeys": [
+    "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9"
+   ],
+   "policy": {
+    "require_nonce_authority": "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9"
+   },
+   "preBalances": [
+    103753389024491,
+    20103952,
+    1067275000,
+    12989700,
+    93018055838,
+    135586358,
+    10000333,
+    686322560,
+    42706560,
+    1,
+    1
+   ],
+   "err": null
+  },
+  {
+   "label": "Drift 2026-04-01 16:05:18Z pre-signed tx #1 (durable nonce, Squads vault tx create+approve)",
+   "slot": 410344005,
+   "blockTime": 1775059518,
+   "base64": "AUCbqUv9bezB4PKRp6mNFLAJ/lIXgK33Uih97FI+VMTA9Y8MZ8cWwR+FRJDHlQefmgkg4z/vyB3lU3gOIrZlJgIBAAMIH9hYErV4XikPqBdSr/B4HAoZn+DpP/Vw6mMapZAUpcsT2p4izt5hqfe4kl1EN90o6b7usccoiGr6aqfJsm6oGRTyMg4dsRyihUh47CbojtjK+VicBfxLmexQWw5HHRWDZfzsRo8uJGh5TA4AJvmFhb6ppRwyd17HyFrmkQfruNn8076t9/m/97Bb74GUNE6z/PJdKB9WR+buAYgPE8T4NQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABoHEzkfiI2i4sVVeyIevCS78fvu2bKP1L79o1Kyct6gGp9UXGSxWjuCKhF9z0peIzwNcMUWyGrNE2AYuqUAAAPoJrVNT30Q+LEw4ZvEYFP/ZAzLHmvzmgm1T448+BYUnBAUDAwcABAQAAAAGBQECAAAFowEw+k6o0OLa0wAAlAAAAAEBAQOQT8iVPc/J87UXmJPuEvycRFytiJqVfWHPuNvMFy9qT0o+70sDyCpxWZ6gehbuS89tzjE1fYRgsqwb1MOphgydCVTbvp7JYMmKeik/4hM2lm/hgNFRrkuBeVYfiYVKU/YBAgIAASgAobAo1Ty4s+TvXifglhVGqtRnSazAkuA8Gox8EYfoh8wkXbnPK8qamQAABgUBBAAABRHcPEngHmxPnwcAAAAAAAAAAAYDAQAECZAlpIi82Cr4AA==",
+   "userKeys": [
+    "39JyWrdbVdRqjzw9yyEjxNtTbTKcTPLdtdCgbz7C7Aq8"
+   ],
+   "policy": {},
+   "preBalances": [
+    342979947,
+    2958000,
+    0,
+    1447680,
+    0,
+    1,
+    2141440,
+    42706560
+   ],
+   "err": null
+  },
+  {
+   "label": "Drift 2026-04-01 16:05:19Z pre-signed tx #2 (durable nonce, approve+execute)",
+   "slot": 410344009,
+   "blockTime": 1775059519,
+   "base64": "AZ7x68WfdgL92E6FOpudAaUd22P0MgIu9+VyvApksJRx0iZ6AS0HZ+wxpqsiuV437NZP3uL6EINL5gJK1Udi6QoBAAYLUUkEz7FfLaJjygMX5cDGGgvNfu9lTnGt5EUq42wAKo1KPu9LA8gqcVmeoHoW7kvPbc4xNX2EYLKsG9TDqYYMnZBPyJU9z8nztReYk+4S/JxEXK2ImpV9Yc+428wXL2pPzJDOxGOxYgUeKqXn+B9ykwj35IqmqnNj79y+Fl67ZQH8076t9/m/97Bb74GUNE6z/PJdKB9WR+buAYgPE8T4NQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE9qeIs7eYan3uJJdRDfdKOm+7rHHKIhq+mqnybJuqBkU8jIOHbEcooVIeOwm6I7YyvlYnAX8S5nsUFsORx0VgwlU276eyWDJinopP+ITNpZv4YDRUa5LgXlWH4mFSlP2BoHEzkfiI2i4sVVeyIevCS78fvu2bKP1L79o1Kyct6gGp9UXGSxWjuCKhF9z0peIzwNcMUWyGrNE2AYuqUAAAM4akCj91T+pyjf3uPgYecSepeQVNwg7z9tO/Usf8OuYAwUDAwoABAQAAAAJAwYABAmQJaSIvNgq+AAJBwYEBwACAQgIwgihV5mkGas=",
+   "userKeys": [
+    "6UJbu9ut5VAsFYQFgPEa5xPfoyF5bB5oi4EknFPvu924"
+   ],
+   "policy": {},
+   "preBalances": [
+    16326033,
+    7795213,
+    51000000,
+    1447680,
+    4718880,
+    1,
+    2958000,
+    2623920,
+    49151453,
+    2141440,
+    42706560
+   ],
+   "err": null
+  },
+  {
+   "label": "SwissBorg/Kiln 2025-08-31 09:55:37Z deactivate + 8 hidden Stake Authorize(Withdrawer)",
+   "slot": 363705172,
+   "blockTime": 1756634137,
+   "base64": "AgOhey+W1EuvZY9MUz0rPMq3SAxmAWpBGFqSmhns8GAOn01udRmCJyvNyyOK4QZb02D2ccr6WSBzQ6FoQz0WJA6iOmYJofscU3E7qjEmxJ1nvA4lwavo/hF+kwjiIPSAfOb1s+zpOAGpy3B1QCGq3eBltIW0BtON4tpSzxCRnfkEAgEDEDZ8AoxTAh7SoUSz4NRt0GIWqYnex0iiSz/vvs7GVijwUfXzhx5luEzDk0WNDyOkExhM8rtwk65OLJnVWzmldcVFotB6QpFeGsjqlyZDgn64/vjBIddKVVr6HjFQarzjNkbhobuUGf256c+29DvS7hMaR+CJZbNWlBsXlG38Bo8/Vkmx6mGvWki0xMw7/9hQdYfHvacgQnXwbhnJs/E3GRVa5LZJhtVlsIcZ5jlexXga4pf7++PdTcGS6mAHps5GgWts5f9zcnHop2Wiw5Xm24QwHXpvbbnRHwV3/Hiz9F+pgfPlTIDX9Xww6LWi+K8prdX/8rXM7+wN5p23MKyIl7KKzWt47qOqQN2bI3Br4D9kxlotoT2GrEmisxVKqDw9bp2kS+NXM6u7S04sTGI6Q5lwsTGXt5P4cYawtY1pXzpdujpig6TmiCGJZNLTqtfzvtnBkKsNJowuSiAZIkCgp7rssylzudYn+A376fhPkoTAN9e3hp4dvlbpw7l7v/tfOAan1RcYx3TJKFZjmGkdXraLXrijm0ttXHNVWyEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGodgXkTdUKpg0N73+KnqyVX9TXIp4citopJ3AAAAAAAan1RcZLFaO4IqEX3PSl4jPA1wxRbIas0TYBi6pQAAA7LHb7aPJszsaou2Kg5JUSyjNWlqYXFB7Wet5TGSS7DYKDQMEDwEEBAAAAA4DAgwABAUAAAAOAwoMACgBAAAABsxvhDBuWA0QfgTwsk/2jfFu18ManTebHMMlmY2uD5wBAAAADgMHDAAoAQAAAAbMb4QwblgNEH4E8LJP9o3xbtfDGp03mxzDJZmNrg+cAQAAAA4DCwwAKAEAAAAGzG+EMG5YDRB+BPCyT/aN8W7XwxqdN5scwyWZja4PnAEAAAAOAwUMACgBAAAABsxvhDBuWA0QfgTwsk/2jfFu18ManTebHMMlmY2uD5wBAAAADgMIDAAoAQAAAAbMb4QwblgNEH4E8LJP9o3xbtfDGp03mxzDJZmNrg+cAQAAAA4DAwwAKAEAAAAGzG+EMG5YDRB+BPCyT/aN8W7XwxqdN5scwyWZja4PnAEAAAAOAwkMACgBAAAABsxvhDBuWA0QfgTwsk/2jfFu18ManTebHMMlmY2uD5wBAAAADgMGDAAoAQAAAAbMb4QwblgNEH4E8LJP9o3xbtfDGp03mxzDJZmNrg+cAQAAAA==",
+   "userKeys": [
+    "4fgh4YxwKecvwV19ZjVA4T5VKM6bj96aGYU6LNN7KJx7"
+   ],
+   "policy": {},
+   "preBalances": [
+    2255165407912,
+    6400000,
+    975332654291,
+    24512605804198,
+    1500000,
+    25339167359447,
+    19013606102151,
+    25339167360447,
+    25339167359446,
+    22140710658609,
+    25339167360448,
+    25339167359449,
+    1169280,
+    1,
+    1141440,
+    42706560
+   ],
+   "err": null
+  },
+  {
+   "label": "Owner-change phishing 2025-11-26 00:41:26Z (SlowMist case): Approve(max)+Assign via CPI of unknown program",
+   "slot": 382532590,
+   "blockTime": 1764117686,
+   "base64": "Asj88fIEiDI0KHwJkoszIa/qTw0b2iblDbb8x3X8TUldBrfGtV8S10HjzU+PLYJHgG1kugG2O0hooTh9OsieBQHOI8uFG2uUvkymoN798u0+mH3HJ7g7l0M7VL/KFSIdjdwg6W5bUiT18vpLcNH18Yf5urJ1LQIrxiLlliMElpgJgAIABQuMeud5CxW9ciRtZHFehUny1TxUQ1vVo3LFBsCDr5c8oYS0tkhb4bIAgJRkoNNDAURXkL8r2gLPVE1RYQmxM7AohexWgJbJVcysG3JKRq2daSM8j77KnJrztGhBdCVsVuuDkHz617D07MTx8CNSGwDGpMPhODPjY4/oLBizb9dXrVm3latk8JuJwYdWvj/XGl58Yaf93GyFS7nhda6T93ff448uCs3CGpif+Ig7IFhkdm1w6SP80PgVnCoRDtYhXYkDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAACUncTbGirwI+3UHiEfTyYCGN4sdVBGlGvcQ3HwAsWXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQbd9uHudY/eGEJdvORszdq2GvxNg7kNJ/69+SjYoYv8uiFrEaQfB3niFgXiLQ2qeK/vWQHFyV3KvsTop3XZzNYFBgAFAkBCDwAGAAkDQA0DAAAAAAAHBwIBAwAICQoICQAAAAAAAAAHBwIBBAAICQoICQAAAAAAAAAHBAIBBQgICgAAAAAAAAAA",
+   "userKeys": [
+    "9w2e3kpt5XUQXLdGb51nRWZoh4JFs6FL7TdEYsvKq6Wb"
+   ],
+   "policy": {},
+   "preBalances": [
+    733501003,
+    1773676109,
+    897840,
+    2039280,
+    2039280,
+    1141440,
+    1,
+    1141440,
+    1,
+    5313138769,
+    18921516
+   ],
+   "err": null
+  }
+ ]
+}

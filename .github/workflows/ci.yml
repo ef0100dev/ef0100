@@ -1,0 +1,45 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm test
+      - name: Bundled data matches SHA256SUMS
+        run: for d in 2026-10-29 registry solana; do (cd fixtures/$d && sha256sum -c SHA256SUMS) || exit 1; done
+      - name: The replay, offline, exits 0
+        run: node dist/cli.js replay --speed 0 && node dist/cli.js guard test
+      - name: Pack, install the tarball into an empty project, run it
+        run: |
+          npm pack --pack-destination /tmp
+          mkdir /tmp/consumer && cd /tmp/consumer && npm init -y >/dev/null
+          npm install /tmp/ef0100-*.tgz
+          npx ef0100 --version
+          npx ef0100 replay --speed 0 > replay.txt
+          grep -q "50 signed. 1 applied." replay.txt
+          node --input-type=module -e "import { decodeTransaction, Guard } from 'ef0100'; console.log(typeof decodeTransaction, typeof Guard)"

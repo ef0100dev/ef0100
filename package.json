@@ -1,0 +1,76 @@
+{
+  "name": "ef0100",
+  "version": "0.1.0",
+  "description": "Decode, replay and refuse EIP-7702 delegations. Built from the bytes of the 2026-10-29 hot-wallet drain.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "ef0100": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./incident": {
+      "types": "./dist/incident.d.ts",
+      "default": "./dist/incident.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "fixtures",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "format": "prettier --write --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
+    "lint": "prettier --check --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" && pnpm typecheck",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm lint && pnpm test"
+  },
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@scure/base": "2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "viem": "2.57.7",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "packageManager": "pnpm@10.29.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "eip-7702",
+    "ethereum",
+    "solana",
+    "security",
+    "signing",
+    "wallet",
+    "delegation",
+    "incident-response"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ef0100dev/ef0100.git"
+  },
+  "homepage": "https://ef0100.xyz",
+  "bugs": {
+    "url": "https://github.com/ef0100dev/ef0100/issues"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "note": "Every leg of the 2026-10-29 drain found on chain. Times are UTC. As far as these traces go, EIP-7702 carried one wallet on one chain: only that wallet's delegation status was checked on other chains, and on the chains traced transaction by transaction every other leg was an ordinary signed transfer. Arbitrum, Base and Polygon outflows were not traced transaction by transaction. A leg's time is when its chain recorded it, or the observer time its timeNote names. Ownership labels marked 'unverified' rest on explorer labels or activity, not on the owner's statement.",
+  "legs": [
+    {
+      "chain": "BTC",
+      "utc": "2026-10-29T20:20:06Z",
+      "timeNote": "confirmed in block 973,732; one observer (BlockCypher) first saw the first of the 11 transactions at 20:01:37",
+      "amount": "18,270.2 BTC",
+      "txs": 11,
+      "mechanism": "P2WPKH spends",
+      "example": "82c0b6f2172537bc13bbaa4d34e63dc95c6d056a12e992d6499fa51242df04ce",
+      "owner": "widely used hot-wallet label"
+    },
+    {
+      "chain": "XRPL",
+      "utc": "2026-10-29T20:05:00Z",
+      "timeNote": "XRP moves from 20:05:00; a 42,750,000.1 RLUSD payment failed at 20:04:52 (tecNO_DST)",
+      "amount": "233,461,943.1 XRP",
+      "txs": null,
+      "mechanism": "Payments from five accounts",
+      "example": "78E31E7BB06ADABE2322FDD0553533873C1D90664AEDE0C12DE06208F50BFA6A",
+      "owner": "per TRM"
+    },
+    {
+      "chain": "SOL",
+      "utc": "2026-10-29T20:10:18Z",
+      "amount": "970,521.9 SOL",
+      "txs": 5,
+      "mechanism": "System transfer",
+      "example": "5YvwLFWubH1ob8JCNDLbPVioC3jtEZ8Maoz5WhNAs5cc8n9V2BjTWbixt6Ny5mddAKkN2SWJUR9y5kzede3ZTqk2",
+      "owner": "unverified (explorer label)"
+    },
+    {
+      "chain": "OP",
+      "utc": "2026-10-29T20:18:23Z",
+      "amount": "44,231,858.2 OP",
+      "txs": 1,
+      "mechanism": "ERC-20 transfer",
+      "example": "0x10b57fd3899677008e74da0ec097a074c60b67d784ecd7eb1694f8ae6d8533bf",
+      "owner": "explorer label"
+    },
+    {
+      "chain": "ETH",
+      "utc": "2026-10-29T20:20:59Z",
+      "amount": "172,624.40 ETH + 1,819,724,910.57 USDT + 823M USDC",
+      "txs": 13,
+      "mechanism": "type-4 delegation + sweeper",
+      "example": "0xad99264d5532ae0dd04b2004eebda05f25657e70dacb764f7ac8d4ccd051298b",
+      "owner": "widely used label",
+      "eip7702": true
+    },
+    {
+      "chain": "TRON",
+      "utc": "2026-10-29T20:21:12Z",
+      "amount": "612,729,468 USDT + 46,384,098 TRX",
+      "txs": 2,
+      "mechanism": "TRX and TRC-20 transfers",
+      "example": "4203af9ca1833d09c05666eafbd70d703a3811c0bdcf125106685ab75958253e",
+      "owner": "unverified (inferred from activity)"
+    },
+    {
+      "chain": "ETH",
+      "utc": "2026-10-29T20:24:47Z",
+      "amount": "28,005.6 ETH + 55,739,800.5 USDT + 7 tokens",
+      "txs": 9,
+      "mechanism": "type-2 transfers from a second wallet",
+      "example": "0x51f263fa50966df6bbd7f8c6e6e99e3791c94444f7c4343b2fef1ee2d62fd39f",
+      "owner": "label used by several analysts"
+    },
+    {
+      "chain": "AVAX",
+      "utc": "2026-10-29T20:33:18Z",
+      "amount": "1,814,099.3 AVAX",
+      "txs": null,
+      "mechanism": "transfers from four wallets",
+      "example": "0x23a449e4773f1590e1fe7444a6f954f2f60d2d0a650667a958c75b44ce2dda28",
+      "owner": "unverified",
+      "timeNote": "20:33–20:35; a further 444,536.6 AVAX at 23:04:30 and 8,409,928.4 USDt are in the research totals, outside this axis"
+    }
+  ],
+  "notChecked": "Arbitrum, Base and Polygon outflows were not traced transaction by transaction."
+}

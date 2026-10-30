@@ -1,0 +1,110 @@
+{
+ "note": "First hop out of the two collectors, read after the drain. Each transfer's raw transaction is bundled under raw/ and is checked against its hash, sender, recipient and value when the incident loads; block and time come from receipts. The activity counts are a snapshot of Blockscout's transaction list for each collector and are not bundled transaction by transaction.",
+ "activitySource": "Blockscout /api/v2/addresses/{address}/transactions?filter=from; contract names as Blockscout labels them",
+ "labelSource": "Explorer labels, as on-chain analysts also cite them; ef0100 makes no ownership claim.",
+ "snapshotUtc": "2026-10-30T06:41:26Z",
+ "labels": {
+  "0xDFd5293D8e347dFe59E90eFd55b2956a1343963d": "Binance 16"
+ },
+ "transfers": [
+  {
+   "tx": "0x551d7961652e6d9835b11988908adf86ebe480badb4ce2d7d52193b2b1b02c76",
+   "block": 26300842,
+   "utc": "2026-10-29T20:38:47Z",
+   "from": "R1",
+   "to": "0x8532FA14ACAf483729C449b8458aedDb900543D4",
+   "eth": "195460",
+   "status": 1
+  },
+  {
+   "tx": "0x48186565bdd78b13e516cf5deaf8431d839eed211205718aa90cdb44ae64e84a",
+   "block": 26302212,
+   "utc": "2026-10-30T01:14:11Z",
+   "from": "R1",
+   "to": "0x8532FA14ACAf483729C449b8458aedDb900543D4",
+   "eth": "2000",
+   "status": 1
+  },
+  {
+   "tx": "0x9edf86533e73658700c5dadb2432dd7bebb628dc0f5fe37991c241f537856071",
+   "block": 26303416,
+   "utc": "2026-10-30T05:15:47Z",
+   "from": "R1",
+   "to": "0x03b0eE5d82990cFF1bDa48651AC3e436d1a020ea",
+   "eth": "17260",
+   "status": 1
+  }
+ ],
+ "activity": [
+  {
+   "collector": "R1",
+   "address": "0x5227f603C1eE34CE3C06eFe6477003BDfCCB2f8c",
+   "txs": 701,
+   "failed": 15,
+   "firstUtc": "2026-10-29T20:29:11Z",
+   "lastUtc": "2026-10-30T05:15:47Z",
+   "routers": [
+    {
+     "name": "SwapRouter02",
+     "address": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+     "txs": 357
+    },
+    {
+     "name": "UniswapV2Router02",
+     "address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+     "txs": 159
+    },
+    {
+     "name": "SwapRouter",
+     "address": "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
+     "txs": 65
+    },
+    {
+     "name": "UniswapV2Router02",
+     "address": "0x03f7724180AA6b939894B5Ca4314783B0b36b329",
+     "txs": 10
+    },
+    {
+     "name": "SwapRouter",
+     "address": "0x2E6cd2d30aa43f40aa81619ff4b6E0a41479B13F",
+     "txs": 7
+    },
+    {
+     "name": "UniswapV2Router02",
+     "address": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
+     "txs": 7
+    }
+   ]
+  },
+  {
+   "collector": "R2",
+   "address": "0xA97bF7836F8A08F9Ed91D41453D371493FAE8d10",
+   "txs": 1266,
+   "failed": 24,
+   "firstUtc": "2026-10-30T01:17:47Z",
+   "lastUtc": "2026-10-30T06:36:11Z",
+   "routers": [
+    {
+     "name": "SwapRouter02",
+     "address": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+     "txs": 427
+    },
+    {
+     "name": "UniswapV2Router02",
+     "address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+     "txs": 403
+    },
+    {
+     "name": "UniswapV2Router02",
+     "address": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
+     "txs": 266
+    },
+    {
+     "name": "SwapRouter",
+     "address": "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
+     "txs": 48
+    }
+   ]
+  }
+ ]
+}
