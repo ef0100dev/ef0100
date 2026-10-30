@@ -14,6 +14,7 @@ export default defineConfig({
         "src/guard/serve.ts": { statements: 90, branches: 80, lines: 95 },
         "src/evm/rlp.ts": { statements: 95, branches: 95, lines: 100 },
         "src/evm/fingerprint.ts": { lines: 100 },
+        "src/evm/owncode.ts": { statements: 100, branches: 100, lines: 100 },
       },
     },
   },

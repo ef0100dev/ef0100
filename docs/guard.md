@@ -67,6 +67,26 @@ await wallet.authorize({ address: sweeper }); // throws GuardRefusal
 `authorize` is judged after `populateAuthorization` fills in the chain id and nonce, so the guard sees the tuple that
 would be signed. ethers is an optional peer dependency.
 
+## Reading ownCode from more than one endpoint
+
+The own-code rule is only as honest as the endpoint that answered `eth_getCode`. One provider that returns `"0x"` for
+a delegated account (compromised, misconfigured or just behind) switches the rule off. `readOwnCode` asks several
+endpoints at once and returns the code only when they agree:
+
+```ts
+import { Guard, profiles, readOwnCode } from "ef0100";
+
+const ownCode = await readOwnCode(address, [alchemyUrl, infuraUrl, ownNodeUrl]); // throws OwnCodeUnconfirmed
+guard.check(preimage, { as: "preimage" }, { signer: address, nonce, ownCode });
+```
+
+By default every endpoint must answer, and with the same bytes. `{ quorum: n }` accepts a value that `n` of them
+returned, as long as no other value also reached `n`, so two-against-two never picks a side. An endpoint that is down
+or answers something that is not hex counts as no answer. Anything short of agreement throws `OwnCodeUnconfirmed`,
+which names each endpoint by host only (no path, no key) with what it returned. Let the error stop the request, or pass
+no `ownCode`: the `hotWallet` profile then refuses with `CONTEXT_MISSING`. Don't fall back to `"0x"`. Use independent
+providers; three URLs on one provider agree with each other by construction.
+
 ## Audit trail
 
 `new Guard(policy, { onDecision })` calls `onDecision` once per decision with `{ at, kind, allow, reasons, signer,
