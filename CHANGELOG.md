@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.10 — 2026-10-30
+
 - `readOwnCode(address, urls, { quorum, block })` reads `eth_getCode` from several endpoints in parallel and returns it
   only when they agree (default: all of them); otherwise throws `OwnCodeUnconfirmed`, endpoints named by host only. One
   endpoint that lies `"0x"` can no longer switch off the own-code rule.
