@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.14 — 2026-10-30
+
 - `recipient --cross-check` (library `checkRecipient(…, { crossCheck: true })`): every endpoint is asked; any one seeing
   a delegation or a blacklist hit counts, and different code from different endpoints holds the transfer with the new
   reason `ENDPOINTS_DISAGREE`. `rpcBatchAll` (every endpoint at once, hosts only) and `strongestCode` are exported.
