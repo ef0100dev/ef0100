@@ -67,6 +67,14 @@ await wallet.authorize({ address: sweeper }); // throws GuardRefusal
 `authorize` is judged after `populateAuthorization` fills in the chain id and nonce, so the guard sees the tuple that
 would be signed. ethers is an optional peer dependency.
 
+## Audit trail
+
+`new Guard(policy, { onDecision })` calls `onDecision` once per decision with `{ at, kind, allow, reasons, signer,
+digest }`. `digest` is keccak256 of the bytes judged, so it lines up with what ends up on chain: the signing hash of a
+transaction, or the digest of an authorization (tuple #15 of 2026-10-29 logs as `0xac384c3e…2674ac`). Neither the key
+nor the bytes are in the record. An exception thrown by `onDecision` is caught and never changes the decision.
+`ef0100 guard serve --log` prints one record per request as a JSON line.
+
 ## The context
 
 | Field | Used for |

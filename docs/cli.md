@@ -112,6 +112,8 @@ curl -s 127.0.0.1:8787/check -H 'content-type: application/json' \
   `nonce` (a number, or a decimal or `0x` string), `ownCode` and `selfSponsored`. Answers `{allow, kind, reasons}`.
 - `GET /health` answers `{ok, version}`.
 - One guard per process, so its rate limit spans requests.
+- `--log`: one JSON line per decision on stdout (`at`, `kind`, `allow`, `reasons`, `signer`, `digest`), for an audit
+  trail; no key material and no request bytes.
 - With the hot-wallet profile every request must carry `ownCode` (`"0x"` when the key's account has none), or it is
   refused with `CONTEXT_MISSING`.
 - A request whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, or that carries an `Origin` header, gets 403:

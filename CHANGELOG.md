@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Audit trail: `new Guard(policy, { onDecision })` reports every decision as `{ at, kind, allow, reasons, signer, digest }`
+  (digest = keccak256 of the bytes judged); a throwing logger never changes a decision. `guard serve --log` prints
+  them as JSON lines.
+
 ## 0.1.8 — 2026-10-30
 
 - `ef0100/ethers`: `guardSigner(signer, guard, context)` puts an ethers v6 signer behind the guard: `signTransaction`,

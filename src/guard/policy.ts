@@ -114,6 +114,23 @@ export interface Decision {
   reasons: Reason[];
 }
 
+/** One line of the audit trail: what was asked, what was decided and why. The key and the bytes themselves are not in it. */
+export interface DecisionRecord {
+  /** ISO 8601, UTC: `ctx.now` when given, else the clock. */
+  at: string;
+  kind: ClassifiedKind;
+  allow: boolean;
+  reasons: ReasonCode[];
+  signer?: string;
+  /** keccak256 of the bytes judged: the signing hash of a transaction, the digest of an authorization, or the digest itself. */
+  digest: Hex;
+}
+
+export interface GuardOptions {
+  /** Called once per decision. An exception thrown here is caught and never changes the decision. */
+  onDecision?: (record: DecisionRecord) => void;
+}
+
 export class GuardRefusal extends Error {
   override name = "GuardRefusal";
   constructor(readonly decision: Decision) {
@@ -164,10 +181,32 @@ export class Guard {
   /** Digests of authorizations this guard already allowed, so a transaction carrying one does not count it twice. */
   private readonly seen = new Set<string>();
 
-  constructor(readonly policy: GuardPolicy = profiles.hotWallet) {}
+  constructor(
+    readonly policy: GuardPolicy = profiles.hotWallet,
+    private readonly options: GuardOptions = {},
+  ) {}
+
+  private emit(decision: Decision, judged: Uint8Array, ctx: GuardContext, digestInput: boolean): Decision {
+    const onDecision = this.options.onDecision;
+    if (!onDecision) return decision;
+    try {
+      onDecision({
+        at: new Date(ctx.now ?? Date.now()).toISOString(),
+        kind: decision.classified.kind,
+        allow: decision.allow,
+        reasons: decision.reasons.map((r) => r.code),
+        ...(ctx.signer ? { signer: ctx.signer } : {}),
+        digest: bytesToHex(digestInput && judged.length === 32 ? judged : keccak256(judged)),
+      });
+    } catch {
+      // The audit trail must never change what the guard decided.
+    }
+    return decision;
+  }
 
   check(input: Uint8Array | string, opts: ClassifyOptions, ctx: GuardContext = {}): Decision {
-    const classified = classifySigningInput(Uint8Array.from(toBytes(input)), opts);
+    const bytes = Uint8Array.from(toBytes(input));
+    const classified = classifySigningInput(bytes, opts);
     const reasons: Reason[] = [];
     const now = ctx.now ?? Date.now();
     const p = this.policy.authorizations ?? {};
@@ -260,7 +299,7 @@ export class Guard {
       this.record(classified, ctx, now, recovered);
       reasons.push({ code: "ALLOWED", message: `${classified.kind} passes the policy` });
     }
-    return { allow, classified, reasons };
+    return this.emit({ allow, classified, reasons }, bytes, ctx, opts.as === "digest");
   }
 
   /**
@@ -277,11 +316,16 @@ export class Guard {
     const p = toBytes(preimage);
     if (!equalBytes(keccak256(p), d)) {
       const classified = classifySigningInput(d, { as: "digest" });
-      return {
-        allow: false,
-        classified,
-        reasons: [{ code: "PREIMAGE_MISMATCH", message: "keccak256(preimage) is not the digest to be signed" }],
-      };
+      return this.emit(
+        {
+          allow: false,
+          classified,
+          reasons: [{ code: "PREIMAGE_MISMATCH", message: "keccak256(preimage) is not the digest to be signed" }],
+        },
+        d,
+        ctx,
+        true,
+      );
     }
     return this.check(p, { as: "preimage", allow32ByteTransactions: true }, ctx);
   }
