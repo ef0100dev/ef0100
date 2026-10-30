@@ -137,4 +137,28 @@ describe("watch webhook", () => {
       error: "unreachable",
     });
   });
+
+  it("with --cross-check, a delegation only reads as cleared once every endpoint answered", () => {
+    const partial = (answered: number): ScanRow => ({ ...eoa(), endpoints: { asked: 3, answered } });
+    const a = diffScan(undefined, [{ ...delegated(), endpoints: { asked: 3, answered: 3 } }]);
+    const b = diffScan(a.next, [partial(2)], new Set(), at);
+    expect(b.events).toEqual([]);
+    expect(b.next.rows.get(`ethereum:${B14.toLowerCase()}`)!.state).toBe("delegated");
+    const c = diffScan(b.next, [partial(3)], new Set(), at);
+    expect(c.events.map((e) => e.kind)).toEqual(["cleared"]);
+    expect(diffScan(a.next, [eoa()], new Set(), at).events.map((e) => e.kind)).toEqual(["cleared"]);
+  });
+
+  it("names the endpoints in an alarm when they disagree", () => {
+    const a = diffScan(undefined, [eoa()]);
+    const disagreement = [
+      { endpoint: "https://a.example", code: "0x" as const },
+      { endpoint: "https://b.example", code: "0xef010063e842b054bd624a465454d533c33f573e9c6fae" as const },
+    ];
+    const b = diffScan(a.next, [{ ...delegated(), disagreement }], new Set(), at);
+    expect(b.events[0]!.disagreement).toEqual(disagreement);
+    expect(describeEvent(b.events[0]!)).toContain("endpoints disagree: a.example 0x, b.example 0xef010063…");
+    const code = diffScan(a.next, [{ ...eoa(), state: "contract", disagreement }], new Set(), at);
+    expect(describeEvent(code.events[0]!)).toContain("endpoints disagree");
+  });
 });
