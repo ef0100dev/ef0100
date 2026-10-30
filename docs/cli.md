@@ -60,7 +60,7 @@ jobs:
   delegations:
     runs-on: ubuntu-latest
     steps:
-      - uses: ef0100dev/ef0100@v0.1.10
+      - uses: ef0100dev/ef0100@v0.1.11
         with:
           addresses: |
             0x1111111111111111111111111111111111111111
