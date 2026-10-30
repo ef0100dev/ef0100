@@ -86,6 +86,7 @@ options
                        repeatable; owncode and guard serve then ask only these
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
+  --cross-check        scan, watch: ask every endpoint of each chain; if any one sees a delegation, it counts
   --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
   --exit-on-change     watch: exit at the first delegation that is not allowed (1, or 2 for a sweeper)
   --webhook <url>      watch: POST each alarm and clear as JSON (Slack text, Discord content); https only
@@ -366,6 +367,7 @@ async function main(argv: string[]): Promise<number> {
       "max-fee": { type: "string" },
       every: { type: "string" },
       "exit-on-change": { type: "boolean" },
+      "cross-check": { type: "boolean" },
       webhook: { type: "string" },
       port: { type: "string" },
       "own-code": { type: "string" },
@@ -397,7 +399,7 @@ async function main(argv: string[]): Promise<number> {
     case "scan": {
       if (!rest.length) usage("scan needs at least one address");
       const only = o.chains?.split(",").map((k) => findChain(k.trim(), chains) ?? usage(`unknown chain ${k}`));
-      const res = await scanAddresses(rest, { chains: only ?? chains, allow: o.allow });
+      const res = await scanAddresses(rest, { chains: only ?? chains, allow: o.allow, crossCheck: o["cross-check"] });
       if (o.json) console.log(json(res));
       else {
         for (const address of [...new Set(res.rows.map((r) => r.address))]) {
@@ -417,6 +419,10 @@ async function main(argv: string[]): Promise<number> {
             } else
               console.log(
                 `  ${name} ${style.dim(r.state === "contract" ? "contract" : "no delegation")}${style.dim(`  nonce ${int(r.nonce ?? 0n)}`)}`,
+              );
+            if (r.disagreement)
+              console.log(
+                `  ${pad("", 19)} ${style.yellow("endpoints disagree")}  ${style.dim(r.disagreement.map((d) => `${d.endpoint.replace(/^https?:\/\//, "")} ${d.code === "0x" ? "0x" : short(d.code, 10, 4)}`).join(" · "))}`,
               );
           }
         }
@@ -480,7 +486,7 @@ async function main(argv: string[]): Promise<number> {
         );
       let state: WatchState | undefined;
       for (;;) {
-        const res = await scanAddresses(rest, { chains: list, allow: o.allow });
+        const res = await scanAddresses(rest, { chains: list, allow: o.allow, crossCheck: o["cross-check"] });
         const first = !state;
         const { events, next } = diffScan(state, res.rows, allow, new Date());
         state = next;

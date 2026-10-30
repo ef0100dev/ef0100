@@ -3,7 +3,7 @@ import { CHAINS, type Chain } from "./chains.js";
 import { parseDelegation } from "./eip7702.js";
 import { fingerprintCode, type CodeFingerprint } from "./fingerprint.js";
 import { lookupCodehash, lookupDelegate, type DelegateEntry } from "./registry.js";
-import { cleanText, rpcBatchAny, type RpcOptions } from "./rpc.js";
+import { cleanText, redactRpc, rpcBatch, rpcBatchAny, type RpcOptions } from "./rpc.js";
 
 export type ScanState = "eoa" | "delegated" | "contract" | "error";
 
@@ -17,6 +17,8 @@ export interface ScanRow {
   entry?: DelegateEntry;
   delegateCode?: CodeFingerprint;
   error?: string;
+  /** With crossCheck, when the endpoints returned different code for this address: what each one said. */
+  disagreement?: { endpoint: string; code: Hex }[];
 }
 
 export interface ScanResult {
@@ -29,6 +31,11 @@ export interface ScanOptions extends RpcOptions {
   chains?: readonly Chain[];
   /** Delegates the caller put there on purpose: they do not raise the exit code. */
   allow?: string[];
+  /**
+   * Ask every endpoint of each chain, not the first that answers. If any of them sees a delegation (or code), the row
+   * says so, with `disagreement` listing what each returned: one endpoint that lags or lies can't hide a delegation.
+   */
+  crossCheck?: boolean;
 }
 
 /** eth_getCode and the nonce for every address on every chain, then the code of each delegate it finds. */
@@ -62,31 +69,58 @@ export async function scanAddresses(addresses: string[], opts: ScanOptions = {})
   return { rows, exitCode };
 }
 
-async function scanChain(chain: Chain, addresses: string[], opts: RpcOptions): Promise<ScanRow[]> {
+/** Every endpoint at once; the answers of those that answered, in endpoint order. Throws only when none did. */
+async function askAll(urls: string[], calls: { method: string; params: unknown[] }[], opts: RpcOptions) {
+  const settled = await Promise.allSettled(urls.map((u) => rpcBatch(u, calls, opts)));
+  const ok = settled.flatMap((r, i) =>
+    r.status === "fulfilled" ? [{ endpoint: redactRpc(urls[i]!), results: r.value }] : [],
+  );
+  if (!ok.length) throw (settled[0] as PromiseRejectedResult).reason;
+  return ok;
+}
+
+/** The code to believe when endpoints differ: a delegation over other code, any code over none. */
+function strongest(codes: Uint8Array[]): Uint8Array {
+  return codes.find((c) => parseDelegation(c)) ?? codes.find((c) => c.length > 0) ?? codes[0]!;
+}
+
+async function scanChain(chain: Chain, addresses: string[], opts: ScanOptions): Promise<ScanRow[]> {
   const meta = { id: chain.id, key: chain.key, name: chain.name };
-  let results: unknown[];
+  const calls = addresses.flatMap((a) => [
+    { method: "eth_getCode", params: [a, "latest"] },
+    { method: "eth_getTransactionCount", params: [a, "latest"] },
+  ]);
+  let answers: { endpoint: string; results: unknown[] }[];
   try {
-    results = await rpcBatchAny(
-      chain.rpc,
-      addresses.flatMap((a) => [
-        { method: "eth_getCode", params: [a, "latest"] },
-        { method: "eth_getTransactionCount", params: [a, "latest"] },
-      ]),
-      opts,
-    );
+    answers = opts.crossCheck
+      ? await askAll(chain.rpc, calls, opts)
+      : [{ endpoint: "", results: await rpcBatchAny(chain.rpc, calls, opts) }];
   } catch (e) {
     return addresses.map((address) => ({ chain: meta, address, state: "error" as const, error: (e as Error).message }));
   }
   const rows: ScanRow[] = addresses.map((address, i) => {
-    try {
-      const code = toBytes(results[i * 2] as string);
-      const nonce = BigInt(results[i * 2 + 1] as string);
-      const delegate = parseDelegation(code);
-      if (delegate) return { chain: meta, address, state: "delegated", nonce, delegate };
-      return { chain: meta, address, state: code.length ? "contract" : "eoa", nonce };
-    } catch {
+    const seen = answers.flatMap((a) => {
+      try {
+        return [
+          {
+            endpoint: a.endpoint,
+            code: toBytes(a.results[i * 2] as string),
+            nonce: BigInt(a.results[i * 2 + 1] as string),
+          },
+        ];
+      } catch {
+        return [];
+      }
+    });
+    if (!seen.length)
       return { chain: meta, address, state: "error", error: "the endpoint returned a malformed result" };
-    }
+    const code = strongest(seen.map((x) => x.code));
+    const nonce = seen.find((x) => x.code === code)!.nonce;
+    const differ = new Set(seen.map((x) => bytesToHex(x.code))).size > 1;
+    const extra = differ ? { disagreement: seen.map((x) => ({ endpoint: x.endpoint, code: bytesToHex(x.code) })) } : {};
+    const delegate = parseDelegation(code);
+    if (delegate) return { chain: meta, address, state: "delegated", nonce, delegate, ...extra };
+    return { chain: meta, address, state: code.length ? "contract" : "eoa", nonce, ...extra };
   });
   const delegates = [...new Set(rows.filter((r) => r.delegate).map((r) => r.delegate!))];
   if (delegates.length) {
