@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `scan --cross-check` and `watch --cross-check` (library: `scanAddresses(…, { crossCheck: true })`): every endpoint of
+  each chain is asked, and if any one sees a delegation or other code, the row reports it with `disagreement` listing
+  what each endpoint returned. Default unchanged (the first endpoint that answers).
+
 ## 0.1.12 — 2026-10-30
 
 - `guard serve --rpc <url>` (repeatable, with `--quorum`): the server reads the signer's own code itself on every

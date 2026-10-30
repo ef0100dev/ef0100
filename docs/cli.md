@@ -30,6 +30,10 @@ and matches it against the registry and the sweeper fingerprint.
 
 - `--chains <k,k>`: only these chains.
 - `--allow <address>`: a delegate you set on purpose (repeatable); it no longer raises the exit code.
+- `--cross-check`: ask every endpoint of each chain instead of the first that answers. If any one of them sees a
+  delegation (or other code), the row reports it, with an `endpoints disagree` line naming what each returned (hosts
+  only; `disagreement` in `--json`). One endpoint that lags or lies can't hide a delegation. It costs one request per
+  endpoint and waits for the slowest. Also on `watch`.
 
 ### `watch <address…>`
 
