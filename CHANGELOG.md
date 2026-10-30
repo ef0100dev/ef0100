@@ -5,6 +5,9 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Tests: Solana fuzz (`test/sol-fuzz.test.ts`): damaged copies of the bundled mainnet transactions through the decoder,
+  the pre-signing check and the ed25519 classifier; each returns or refuses, and none fails in its own code.
+
 ## 0.1.3 — 2026-10-30
 
 - Tests: guard invariants over random authorizations (`test/invariants.test.ts`): never chain_id 0, never a nonce other
