@@ -30,7 +30,7 @@ gets signed.
 | `signer` | The key being asked. Required for an authorization (`CONTEXT_MISSING` without it), for rate limits and for the own-code rule. |
 | `nonce` | The key's pending nonce. Required for an authorization unless the policy sets `requireNonce: false`. |
 | `selfSponsored` | The key will send the type-4 transaction itself, so its authorization must carry nonce + 1. Set it only from the component that submits that transaction: an authorization for nonce + 1 that is never sent stays usable after the key's next transaction. |
-| `ownCode` | `eth_getCode` of the key's own address. Anything non-empty switches the guard to the compromised rules below. |
+| `ownCode` | `eth_getCode` of the key's own address, `"0x"` when it has none. Anything non-empty switches the guard to the compromised rules below. Required by the `hotWallet` profile (`requireOwnCode`): a request without it is refused with `CONTEXT_MISSING`, because a caller that forgets it would otherwise lose that rule without noticing. |
 | `codehashes` | Current codehash of each delegate, for delegates pinned by codehash. |
 | `now` | Milliseconds. A time in the future does not count against the rate-limit window. |
 
@@ -62,7 +62,7 @@ lists shaped as lists).
 | `PREIMAGE_MISMATCH` | `checkDigest` was given a preimage whose keccak256 is not the digest. |
 | `UNKNOWN_INPUT` | The bytes match no signing domain. |
 | `KIND_NOT_ALLOWED` | A known kind outside `allowKinds` (default: typed, set-code and legacy transactions, EIP-712, personal messages; the hot-wallet profile allows transactions only). |
-| `CONTEXT_MISSING` | An authorization without `ctx.signer`, or without `ctx.nonce` while `requireNonce` is on (the default). |
+| `CONTEXT_MISSING` | An authorization without `ctx.signer`, or without `ctx.nonce` while `requireNonce` is on (the default); or any request without `ctx.ownCode` while `requireOwnCode` is on (the `hotWallet` default). |
 | `NO_CHAIN_ID` | A legacy transaction without a chain id, which replays on every chain the key uses (`allowUnprotectedLegacy` opts in). |
 | `TOO_MANY_TUPLES` | A set-code transaction with more tuples than `maxTuples` (default 16); each tuple costs an ecrecover. |
 | `DELEGATE_NOT_ALLOWED` | An authorization to a delegate not in `authorizations.allowDelegates`. |

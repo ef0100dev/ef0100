@@ -60,8 +60,14 @@ describe("guard serve", () => {
   });
 
   it("signs the wallet's own clear", async () => {
-    const r = await call({ body: JSON.stringify({ preimage: clear, signer: B14, nonce: "0x1209df9" }) });
+    const r = await call({ body: JSON.stringify({ preimage: clear, signer: B14, nonce: "0x1209df9", ownCode: "0x" }) });
     expect(r.json.allow).toBe(true);
+  });
+
+  it("refuses a request that does not say what the key's own code is, under the hot-wallet profile", async () => {
+    const r = await call({ body: JSON.stringify({ preimage: clear, signer: B14, nonce: "0x1209df9" }) });
+    expect(r.json.allow).toBe(false);
+    expect((r.json.reasons as { code: string }[]).map((x) => x.code)).toContain("CONTEXT_MISSING");
   });
 
   it("refuses another Host and any browser Origin (DNS rebinding)", async () => {

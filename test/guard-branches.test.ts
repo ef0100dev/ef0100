@@ -206,3 +206,19 @@ describe("guard: set-code transactions and kinds", () => {
     }
   });
 });
+
+describe("guard: requireOwnCode", () => {
+  it("refuses everything under the hot-wallet profile until the caller says what the key's own code is", () => {
+    const tx = typedTx("0x1111111111111111111111111111111111111111");
+    const g = new Guard(profiles.hotWallet);
+    const missing = g.check(tx, { as: "preimage" }, { signer: SIGNER });
+    expect(missing.allow).toBe(false);
+    expect(codes(missing)).toContain("CONTEXT_MISSING");
+    expect(g.check(tx, { as: "preimage" }, { signer: SIGNER, ownCode: "0x" }).allow).toBe(true);
+  });
+
+  it("is off unless the policy turns it on", () => {
+    const tx = typedTx("0x1111111111111111111111111111111111111111");
+    expect(new Guard(base({})).check(tx, { as: "preimage" }, { signer: SIGNER }).allow).toBe(true);
+  });
+});
