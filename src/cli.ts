@@ -12,6 +12,7 @@ import { planClearDelegation } from "./evm/remediate.js";
 import { RpcError, cleanText, rpcBatchAny } from "./evm/rpc.js";
 import { addressOfSecretKey, signDigest } from "./evm/secp256k1.js";
 import { scanAddresses } from "./evm/scan.js";
+import { createGuardServer } from "./guard/serve.js";
 import { redactRpc } from "./evm/rpc.js";
 import {
   checkWebhookUrl,
@@ -63,6 +64,7 @@ usage
   ef0100 watch <address…>              scan again every slot; one line, in UTC, whenever a delegation appears, changes or clears
   ef0100 classify <hex>                what a key is being asked to sign, and whether the guard would sign it
   ef0100 guard test                    the guard against the incident's tuples, digests and clear
+  ef0100 guard serve                   the guard on http://127.0.0.1:8787/check for signers in any language (--port, --profile)
   ef0100 oracle                        why a raw-digest signer is an authorization signer (public test key)
   ef0100 recipient <address>           top-up guard: should funds go to this address right now?
   ef0100 clear <address>               unsigned self-sponsored transaction that clears a delegation
@@ -349,6 +351,7 @@ async function main(argv: string[]): Promise<number> {
       every: { type: "string" },
       "exit-on-change": { type: "boolean" },
       webhook: { type: "string" },
+      port: { type: "string" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
@@ -567,7 +570,23 @@ async function main(argv: string[]): Promise<number> {
     }
 
     case "guard": {
-      if (rest[0] !== "test") usage("try: ef0100 guard test, or ef0100 classify <hex>");
+      if (rest[0] === "serve") {
+        if (o.profile && o.profile !== "user" && o.profile !== "hot-wallet") usage("--profile is hot-wallet or user");
+        const port = o.port == null ? 8787 : Number(o.port);
+        if (!Number.isInteger(port) || port < 1 || port > 65535) usage("--port is 1 to 65535");
+        const server = createGuardServer(new Guard(o.profile === "user" ? profiles.user : profiles.hotWallet), {
+          version: pkg.version,
+        });
+        await new Promise<void>((resolve, reject) => {
+          server.once("error", reject);
+          server.listen(port, "127.0.0.1", () => resolve());
+        });
+        console.log(
+          `\n  ${style.bold("guard serve")}  http://127.0.0.1:${port}/check  ${style.dim(`profile ${o.profile ?? "hot-wallet"} · 127.0.0.1 only · no keys`)}\n`,
+        );
+        return new Promise<number>(() => {});
+      }
+      if (rest[0] !== "test") usage("try: ef0100 guard test, ef0100 guard serve, or ef0100 classify <hex>");
       const sums = verifyFixtures();
       const inc = loadIncident();
       const g = guardSummary(inc);
