@@ -5,6 +5,9 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Tests: guard invariants over random authorizations (`test/invariants.test.ts`): never chain_id 0, never a nonce other
+  than the live one, never an unlisted delegate, never more than `maxPerWindow` in any window, and only the clear once
+  the key's own account has code; plus the control that an allowed delegate at the live nonce is signed.
 - `watch --webhook <url>`: each alarm and each clear posted as JSON, readable in Slack and Discord as is. https only
   (http to localhost for a relay), no redirects, the URL never printed; a failed delivery never stops the watch.
 - `pnpm bench`: median and p99 per call for the guard and the decoders (`bench/guard.bench.mjs`).
