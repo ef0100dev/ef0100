@@ -23,7 +23,7 @@ import {
   type WatchEvent,
   type WatchState,
 } from "./evm/watch.js";
-import { Guard, profiles, type Decision, type GuardPolicy } from "./guard/policy.js";
+import { Guard, profiles, type Decision, type DecisionRecord, type GuardPolicy } from "./guard/policy.js";
 import { loadIncident, verifyFixtures, type Incident } from "./incident.js";
 import { checkSolanaTransaction } from "./sol/check.js";
 import { getSolanaTransaction, listNonceAccounts, solanaEndpoints } from "./sol/rpc.js";
@@ -64,7 +64,7 @@ usage
   ef0100 watch <address…>              scan again every slot; one line, in UTC, whenever a delegation appears, changes or clears
   ef0100 classify <hex>                what a key is being asked to sign, and whether the guard would sign it
   ef0100 guard test                    the guard against the incident's tuples, digests and clear
-  ef0100 guard serve                   the guard on http://127.0.0.1:8787/check for signers in any language (--port, --profile)
+  ef0100 guard serve                   the guard on http://127.0.0.1:8787/check for signers in any language (--port, --profile, --log)
   ef0100 oracle                        why a raw-digest signer is an authorization signer (public test key)
   ef0100 recipient <address>           top-up guard: should funds go to this address right now?
   ef0100 clear <address>               unsigned self-sponsored transaction that clears a delegation
@@ -364,6 +364,7 @@ async function main(argv: string[]): Promise<number> {
       webhook: { type: "string" },
       port: { type: "string" },
       "own-code": { type: "string" },
+      log: { type: "boolean" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
@@ -597,7 +598,8 @@ async function main(argv: string[]): Promise<number> {
         if (o.profile && o.profile !== "user" && o.profile !== "hot-wallet") usage("--profile is hot-wallet or user");
         const port = o.port == null ? 8787 : Number(o.port);
         if (!Number.isInteger(port) || port < 1 || port > 65535) usage("--port is 1 to 65535");
-        const server = createGuardServer(new Guard(o.profile === "user" ? profiles.user : profiles.hotWallet), {
+        const audit = o.log ? { onDecision: (r: DecisionRecord) => console.log(JSON.stringify(r)) } : {};
+        const server = createGuardServer(new Guard(o.profile === "user" ? profiles.user : profiles.hotWallet, audit), {
           version: pkg.version,
         });
         await new Promise<void>((resolve, reject) => {
