@@ -16,6 +16,10 @@
       "types": "./dist/incident.d.ts",
       "default": "./dist/incident.js"
     },
+    "./viem": {
+      "types": "./dist/integrations/viem.d.ts",
+      "default": "./dist/integrations/viem.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -75,5 +79,13 @@
   "homepage": "https://ef0100.xyz",
   "bugs": {
     "url": "https://github.com/ef0100dev/ef0100/issues"
+  },
+  "peerDependencies": {
+    "viem": ">=2.20.0"
+  },
+  "peerDependenciesMeta": {
+    "viem": {
+      "optional": true
+    }
   }
 }
