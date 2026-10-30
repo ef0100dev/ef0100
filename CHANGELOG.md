@@ -5,6 +5,9 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- CI: a nightly fuzz run (`.github/workflows/fuzz.yml`): both fuzz suites and the guard invariants at 100,000 runs per
+  property, seeded with the run id so every night tries new inputs; a failure prints its seed.
+
 ## 0.1.4 — 2026-10-30
 
 - `guard serve`: the guard over HTTP on 127.0.0.1 (`POST /check`, `GET /health`) for signers in other languages.

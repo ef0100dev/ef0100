@@ -1,0 +1,43 @@
+name: fuzz
+# The fuzz suites and the guard invariants at 100,000 runs per property, every night with a new seed (the run id), so
+# each night tries inputs no earlier night did. A failure prints its seed; rerun it locally with
+# EF0100_FUZZ_SEED=<seed> EF0100_FUZZ_RUNS=<runs> pnpm exec vitest run <file>.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Runs per property"
+        default: "100000"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fuzz and invariants
+        env:
+          EF0100_FUZZ_RUNS: ${{ inputs.runs || '100000' }}
+          EF0100_FUZZ_SEED: ${{ github.run_id }}
+        run: |
+          [[ "$EF0100_FUZZ_RUNS" =~ ^[0-9]{1,7}$ ]] || { echo "runs must be a number: $EF0100_FUZZ_RUNS"; exit 1; }
+          echo "seed $EF0100_FUZZ_SEED, $EF0100_FUZZ_RUNS runs per property"
+          pnpm exec vitest run test/fuzz.test.ts test/sol-fuzz.test.ts test/invariants.test.ts
