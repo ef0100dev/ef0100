@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.0 — 2026-10-30
+
 The first release: a decoder, a guard and a replay built from the bytes of the 2026-10-29 hot-wallet drain. Not
 externally audited (see SECURITY.md); every behaviour below is pinned by a test.
 
