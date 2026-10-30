@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.9 — 2026-10-30
+
 - Audit trail: `new Guard(policy, { onDecision })` reports every decision as `{ at, kind, allow, reasons, signer, digest }`
   (digest = keccak256 of the bytes judged); a throwing logger never changes a decision. `guard serve --log` prints
   them as JSON lines.
