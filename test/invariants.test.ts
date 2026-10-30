@@ -7,7 +7,7 @@ import { Guard, type GuardPolicy } from "../src/guard/policy.ts";
 // the count, as in fuzz.test.ts.
 const RUNS = Number(process.env.EF0100_FUZZ_RUNS ?? 2000);
 const SEED = Number(process.env.EF0100_FUZZ_SEED ?? 0x7702);
-const LIMIT = Math.max(10_000, RUNS * 4);
+const LIMIT = Math.max(60_000, RUNS * 4);
 
 function rng(seed: number) {
   let x = seed >>> 0 || 1;

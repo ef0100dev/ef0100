@@ -5,6 +5,12 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Tests: the guard's less travelled rules (`test/guard-branches.test.ts`): codehash pinning, chain limits, clearing turned
+  off, trusting an allowed own delegation, plain-ETH and token break-glass, bad tuples in a set-code transaction,
+  kinds outside `allowKinds`, a 32-byte input that parses as a transaction, and the seen-set past 10,000 entries.
+  `src/guard/policy.ts` coverage: lines 91.8% → 99.3%, branches 80.8% → 93.2%.
+- `pnpm coverage` with per-file floors for the guard, `guard serve`, RLP and the bytecode fingerprint; CI runs it.
+
 ## 0.1.5 — 2026-10-30
 
 - `action.yml`: `uses: ef0100dev/ef0100@<tag>` runs `scan` in GitHub Actions and fails the job on a delegation; inputs are

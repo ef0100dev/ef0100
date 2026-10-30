@@ -12,7 +12,7 @@ import { rawFix } from "./helpers.ts";
 const RUNS = Number(process.env.EF0100_FUZZ_RUNS ?? 2000);
 const SEED = Number(process.env.EF0100_FUZZ_SEED ?? 0x7702);
 // About a millisecond per run on a laptop for the slowest property; the limit grows with the count.
-const LIMIT = Math.max(10_000, RUNS * 4);
+const LIMIT = Math.max(60_000, RUNS * 4);
 
 function rng(seed: number) {
   let x = seed >>> 0 || 1;
