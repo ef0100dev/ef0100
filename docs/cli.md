@@ -70,6 +70,25 @@ What a key is being asked to sign, and whether the guard would sign it.
 - `--signer <address>`, `--nonce <n>`, `--self` (self-sponsored: the authorization carries nonce + 1).
 - `--profile hot-wallet|user`, `--allow-delegate <address>` (repeatable).
 
+### `guard serve`
+
+The guard over HTTP, for a signer written in any language. Listens on `127.0.0.1` only (there is no option to listen
+elsewhere), holds no keys and signs nothing: it answers whether the guard would sign.
+
+```sh
+npx ef0100 guard serve --port 8787 --profile hot-wallet
+curl -s 127.0.0.1:8787/check -H 'content-type: application/json' \
+  -d '{"preimage":"0x05…","signer":"0x28C6…1d60","nonce":"18914809","ownCode":"0x"}'
+# {"allow":false,"kind":"eip7702-authorization","reasons":[{"code":"DELEGATE_NOT_ALLOWED",…}]}
+```
+
+- `POST /check` with `preimage`, or `digest` (with its `preimage` when the signer only sees hashes), plus `signer`,
+  `nonce` (a number, or a decimal or `0x` string), `ownCode` and `selfSponsored`. Answers `{allow, kind, reasons}`.
+- `GET /health` answers `{ok, version}`.
+- One guard per process, so its rate limit spans requests.
+- A request whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, or that carries an `Origin` header, gets 403:
+  a web page cannot reach it through DNS rebinding. Bodies above 256 KiB get 413, malformed ones 400.
+
 ### `guard test`
 
 The `hotWallet` profile against the incident's 50 tuples as preimages and as digests, the rehearsal tuples, and the
