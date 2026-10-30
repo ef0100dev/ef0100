@@ -34,7 +34,8 @@
     "format": "prettier --write --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
     "lint": "prettier --check --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" && pnpm typecheck",
     "prepack": "pnpm build",
-    "prepublishOnly": "pnpm lint && pnpm test"
+    "prepublishOnly": "pnpm lint && pnpm test",
+    "bench": "pnpm build && node bench/guard.bench.mjs"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",
