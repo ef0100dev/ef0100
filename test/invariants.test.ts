@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bytesToHex } from "../src/evm/bytes.ts";
 import { authorizationPreimage } from "../src/evm/eip7702.ts";
 import { Guard, type GuardPolicy } from "../src/guard/policy.ts";
+import { OwnCodeUnconfirmed, agreedOwnCode, type OwnCodeAnswer } from "../src/evm/owncode.ts";
 
 // Each guard rule checked against random authorizations, seeded so a failure names its input. EF0100_FUZZ_RUNS raises
 // the count, as in fuzz.test.ts.
@@ -135,6 +136,48 @@ describe(`guard invariants (seed ${SEED}, ${RUNS} runs)`, () => {
         const clear = ask(g, chainId, ZERO, live, { nonce: live, now: i, ownCode });
         expect(clear.allow, `run ${i}: ${codes(clear)}`).toBe(true);
       }
+    },
+    LIMIT,
+  );
+
+  it(
+    "own code from several endpoints: one that lags or lies can make the guard refuse, never make it sign",
+    () => {
+      const r = rng(SEED + 7);
+      const g = new Guard({ ...policy(), requireOwnCode: true });
+      const answer = (): Omit<OwnCodeAnswer, "endpoint"> => {
+        const k = int(r, 10);
+        if (k < 2) return { error: "HTTP 504" };
+        if (k < 7) return { code: "0x" };
+        if (k < 9) return { code: `0xef0100${addr(r).slice(2)}` as `0x${string}` };
+        return { code: bytesToHex(Uint8Array.from({ length: 1 + int(r, 40) }, () => int(r, 256))) };
+      };
+      let signed = 0;
+      let refused = 0;
+      for (let i = 0; i < RUNS; i++) {
+        const n = 1 + int(r, 5);
+        const answers = Array.from({ length: n }, (_, j) => ({ endpoint: `https://e${j}.example`, ...answer() }));
+        const quorum = 1 + int(r, n);
+        const seen = answers.flatMap((a) => (a.code === undefined ? [] : [a.code]));
+        let ownCode: `0x${string}` | undefined;
+        try {
+          ownCode = agreedOwnCode(answers, quorum);
+          expect(new Set(seen), `run ${i}`).toEqual(new Set([ownCode]));
+          expect(seen.length).toBeGreaterThanOrEqual(quorum);
+        } catch (e) {
+          expect(e, `run ${i}`).toBeInstanceOf(OwnCodeUnconfirmed);
+          expect(new Set(seen).size !== 1 || seen.length < quorum, `run ${i}`).toBe(true);
+        }
+        const live = big(r);
+        const d = ask(g, BigInt(1 + int(r, 2 ** 31)), OK, live, { nonce: live, now: i, ownCode });
+        if (seen.some((c) => c !== "0x")) expect(d.allow, `run ${i}: ${codes(d)}`).toBe(false);
+        else if (ownCode === undefined) expect(codes(d), `run ${i}`).toContain("CONTEXT_MISSING");
+        else expect(d.allow, `run ${i}: ${codes(d)}`).toBe(true);
+        if (d.allow) signed++;
+        else refused++;
+      }
+      expect(signed).toBeGreaterThan(0);
+      expect(refused).toBeGreaterThan(0);
     },
     LIMIT,
   );
