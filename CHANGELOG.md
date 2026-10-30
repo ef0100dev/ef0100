@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.4 — 2026-10-30
+
 - `guard serve`: the guard over HTTP on 127.0.0.1 (`POST /check`, `GET /health`) for signers in other languages.
   No keys; foreign `Host` and any `Origin` refused (DNS rebinding), bodies capped at 256 KiB.
 - Tests: Solana fuzz (`test/sol-fuzz.test.ts`): damaged copies of the bundled mainnet transactions through the decoder,
