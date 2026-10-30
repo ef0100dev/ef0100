@@ -19,6 +19,8 @@ export interface ScanRow {
   error?: string;
   /** With crossCheck, when the endpoints returned different code for this address: what each one said. */
   disagreement?: { endpoint: string; code: Hex }[];
+  /** With crossCheck: how many endpoints were asked and how many returned a well-formed answer for this address. */
+  endpoints?: { asked: number; answered: number };
 }
 
 export interface ScanResult {
@@ -107,7 +109,10 @@ async function scanChain(chain: Chain, addresses: string[], opts: ScanOptions): 
     const code = strongestCode(seen.map((x) => x.code));
     const nonce = seen.find((x) => x.code === code)!.nonce;
     const differ = new Set(seen.map((x) => bytesToHex(x.code))).size > 1;
-    const extra = differ ? { disagreement: seen.map((x) => ({ endpoint: x.endpoint, code: bytesToHex(x.code) })) } : {};
+    const extra = {
+      ...(differ ? { disagreement: seen.map((x) => ({ endpoint: x.endpoint, code: bytesToHex(x.code) })) } : {}),
+      ...(opts.crossCheck ? { endpoints: { asked: chain.rpc.length, answered: seen.length } } : {}),
+    };
     const delegate = parseDelegation(code);
     if (delegate) return { chain: meta, address, state: "delegated", nonce, delegate, ...extra };
     return { chain: meta, address, state: code.length ? "contract" : "eoa", nonce, ...extra };

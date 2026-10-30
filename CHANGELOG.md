@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `watch --cross-check`: a delegation is only reported as cleared once every endpoint answered, so the one endpoint
+  that saw it being down for a poll can't produce a false "Cleared". Alarms name the endpoints when they disagree
+  (`disagreement` on the event). Scan rows carry `endpoints: { asked, answered }` under `crossCheck`.
+
 ## 0.1.14 — 2026-10-30
 
 - `recipient --cross-check` (library `checkRecipient(…, { crossCheck: true })`): every endpoint is asked; any one seeing

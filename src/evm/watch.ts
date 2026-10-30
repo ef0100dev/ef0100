@@ -19,6 +19,8 @@ export interface WatchEvent {
   allowed?: boolean;
   nonce?: string;
   error?: string;
+  /** With --cross-check: what each endpoint returned, when they differed. */
+  disagreement?: { endpoint: string; code: string }[];
 }
 
 export interface WatchState {
@@ -66,8 +68,17 @@ export function diffScan(
     }
     if (next.down.delete(key) && next.rows.has(key)) events.push({ ...base, kind: "back" });
     const before = next.rows.get(key);
+    // A delegation only reads as gone once every endpoint answered: the one that saw it may just be down this poll.
+    if (
+      before?.state === "delegated" &&
+      r.state !== "delegated" &&
+      r.endpoints &&
+      r.endpoints.answered < r.endpoints.asked
+    )
+      continue;
     next.rows.set(key, r);
     const facts = {
+      ...(r.disagreement ? { disagreement: r.disagreement } : {}),
       ...(r.delegate ? { delegate: r.delegate } : {}),
       ...(labelOf(r) ? { label: labelOf(r) } : {}),
       ...(r.state === "delegated"
@@ -87,7 +98,8 @@ export function diffScan(
       events.push({ ...base, kind: r.state === "contract" ? "code" : "cleared", previous: before.delegate! });
     else if (was === "delegated" && r.delegate!.toLowerCase() !== before.delegate!.toLowerCase())
       events.push({ ...base, kind: "redelegated", ...facts, previous: before.delegate! });
-    else if (was === "eoa" && r.state === "contract") events.push({ ...base, kind: "code" });
+    else if (was === "eoa" && r.state === "contract")
+      events.push({ ...base, kind: "code", ...(r.disagreement ? { disagreement: r.disagreement } : {}) });
   }
   return { events, next };
 }
@@ -98,16 +110,21 @@ export function isAlarm(e: WatchEvent): boolean {
 }
 
 /** One line a person can read in a chat channel. Addresses are full: a short form cannot be checked against anything. */
+const disagree = (e: WatchEvent) =>
+  e.disagreement
+    ? ` · endpoints disagree: ${e.disagreement.map((d) => `${d.endpoint.replace(/^https?:\/\//, "")} ${d.code === "0x" ? "0x" : `${d.code.slice(0, 10)}…`}`).join(", ")}`
+    : "";
+
 export function describeEvent(e: WatchEvent): string {
   const at = `${e.at.slice(0, 19).replace("T", " ")} UTC`;
   switch (e.kind) {
     case "delegated":
     case "redelegated":
-      return `${e.bad ? "DELEGATED TO A SWEEPER" : e.kind === "delegated" ? "Delegated" : "Redelegated"}: ${e.address} on ${e.chain} → ${e.delegate}${e.label ? ` (${e.label})` : ""}${e.previous ? `, was ${e.previous}` : ""} · ${at}`;
+      return `${e.bad ? "DELEGATED TO A SWEEPER" : e.kind === "delegated" ? "Delegated" : "Redelegated"}: ${e.address} on ${e.chain} → ${e.delegate}${e.label ? ` (${e.label})` : ""}${e.previous ? `, was ${e.previous}` : ""}${disagree(e)} · ${at}`;
     case "cleared":
       return `Cleared: ${e.address} on ${e.chain}, no delegation now${e.previous ? ` (was ${e.previous})` : ""} · ${at}`;
     case "code":
-      return `Code appeared: ${e.address} on ${e.chain} · ${at}`;
+      return `Code appeared: ${e.address} on ${e.chain}${disagree(e)} · ${at}`;
     case "unreachable":
       return `No answer: ${e.chain} for ${e.address} · ${at}`;
     case "back":

@@ -33,7 +33,8 @@ and matches it against the registry and the sweeper fingerprint.
 - `--cross-check`: ask every endpoint of each chain instead of the first that answers. If any one of them sees a
   delegation (or other code), the row reports it, with an `endpoints disagree` line naming what each returned (hosts
   only; `disagreement` in `--json`). One endpoint that lags or lies can't hide a delegation. It costs one request per
-  endpoint and waits for the slowest. Also on `watch`.
+  endpoint and waits for the slowest. Also on `watch`, where an alarm names the endpoints when they disagree, and a
+  delegation is only reported as cleared once every endpoint answered (the one that saw it may just be down).
 
 ### `watch <address…>`
 
