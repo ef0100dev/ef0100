@@ -8,7 +8,7 @@ import { decodeSolanaTransaction } from "../src/sol/message.ts";
 // input. EF0100_FUZZ_RUNS raises the count.
 const RUNS = Number(process.env.EF0100_FUZZ_RUNS ?? 2000);
 const SEED = Number(process.env.EF0100_FUZZ_SEED ?? 0x7702);
-const LIMIT = Math.max(10_000, RUNS * 4);
+const LIMIT = Math.max(60_000, RUNS * 4);
 
 const cases = (
   JSON.parse(readFileSync(new URL("../fixtures/solana/cases.json", import.meta.url), "utf8")) as {
