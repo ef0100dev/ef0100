@@ -35,7 +35,8 @@
     "lint": "prettier --check --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\" && pnpm typecheck",
     "prepack": "pnpm build",
     "prepublishOnly": "pnpm lint && pnpm test",
-    "bench": "pnpm build && node bench/guard.bench.mjs"
+    "bench": "pnpm build && node bench/guard.bench.mjs",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "26.6.6",
+    "@vitest/coverage-v8": "5.0.5",
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "viem": "2.57.7",

@@ -30,6 +30,9 @@ jobs:
       - run: pnpm build
       - run: pnpm lint
       - run: pnpm test
+      - name: Coverage floor for the files that decide what gets signed
+        if: matrix.node == 24
+        run: pnpm coverage
       - name: Bundled data matches SHA256SUMS
         run: for d in 2026-10-29 registry solana; do (cd fixtures/$d && sha256sum -c SHA256SUMS) || exit 1; done
       - name: The replay, offline, exits 0
