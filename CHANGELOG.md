@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.8 — 2026-10-30
+
 - `ef0100/ethers`: `guardSigner(signer, guard, context)` puts an ethers v6 signer behind the guard: `signTransaction`,
   `signMessage`, `signTypedData` and `authorize` are judged from their bytes, including when ethers calls them itself
   (`sendTransaction` is refused before broadcast); `connect()` stays guarded. ethers is an optional peer dependency.
