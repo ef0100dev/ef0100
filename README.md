@@ -137,6 +137,8 @@ if (!decision.allow) throw new Error(decision.reasons.map((r) => r.code).join(",
 - **The hot-wallet profile signs transactions only**: no EIP-712 (a permit is EIP-712), no personal messages, no legacy
   transaction without a chain id (`NO_CHAIN_ID`), and no 32-byte input that merely parses as a transaction.
 
+With viem or ethers it's one call: `guardAccount` from `ef0100/viem`, `guardSigner` from `ef0100/ethers`.
+
 Details and every reason code: [docs/guard.md](docs/guard.md).
 
 ## The library

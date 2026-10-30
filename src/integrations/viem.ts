@@ -12,9 +12,9 @@ import { concatBytes, hexToBytes, type Hex } from "../evm/bytes.js";
 import { authorizationPreimage } from "../evm/eip7702.js";
 import { Guard, GuardRefusal, type GuardContext } from "../guard/policy.js";
 
-/** What the account is about to sign, so the caller can supply the right facts (the live nonce, the own code). */
-export type SigningKind = "hash" | "authorization" | "transaction" | "message" | "typed-data";
-export type ContextSource = (kind: SigningKind) => GuardContext | Promise<GuardContext>;
+import type { ContextSource, SigningKind } from "./types.js";
+
+export type { ContextSource, SigningKind } from "./types.js";
 
 /** `0x19 0x01 ‖ domainSeparator ‖ structHash`: the bytes whose keccak256 an EIP-712 signature covers. */
 export function typedDataPreimage(td: TypedDataDefinition): Uint8Array {
