@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { bytesToHex, hexToBytes, isAddress, type Hex } from "./evm/bytes.js";
 import { CHAINS, findChain, withRpcOverrides } from "./evm/chains.js";
-import { authorizationDigest, authorizationPreimage, recoverAuthority } from "./evm/eip7702.js";
+import { authorizationDigest, authorizationPreimage, delegationCode, recoverAuthority } from "./evm/eip7702.js";
 import { fingerprintCode } from "./evm/fingerprint.js";
 import { inspectTransaction } from "./evm/inspect.js";
 import { lookupDelegate } from "./evm/registry.js";
@@ -88,6 +88,7 @@ options
   --profile <name>     classify: hot-wallet (default) or user
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
+  --own-code <hex>     classify: eth_getCode of the signer's own address (default 0x, none)
   --speed <n>          replay animation speed; 0 prints the final frame (default when not a terminal)
   --json               machine-readable output
 
@@ -125,6 +126,7 @@ const REASON_LABEL: Record<string, string> = {
   DELEGATE_NOT_ALLOWED: "delegate not allowed",
   NONCE_NOT_LIVE: "off the live nonce",
   RATE_LIMITED: "rate-limited",
+  CONTEXT_MISSING: "own code not given",
 };
 
 interface GuardTestRow {
@@ -163,17 +165,26 @@ function guardSummary(inc: Incident): GuardSummary & {
     g.check(
       authorizationPreimage(a),
       { as: "preimage" },
-      { signer: inc.authority, nonce: inc.delegation.authorityNonceAtTx, now: i },
+      { signer: inc.authority, nonce: inc.delegation.authorityNonceAtTx, now: i, ownCode: "0x" },
     ),
   );
   const dig = auths.map((a) =>
-    new Guard(profiles.hotWallet).check(authorizationDigest(a), { as: "digest" }, { signer: inc.authority }),
+    new Guard(profiles.hotWallet).check(
+      authorizationDigest(a),
+      { as: "digest" },
+      { signer: inc.authority, ownCode: "0x" },
+    ),
   );
   const clearTuple = inc.clear.tx.authorizationList[0]!;
   const clear = new Guard(profiles.hotWallet).check(
     authorizationPreimage(clearTuple),
     { as: "preimage" },
-    { signer: inc.authority, nonce: inc.clear.tx.nonce, selfSponsored: true },
+    {
+      signer: inc.authority,
+      nonce: inc.clear.tx.nonce,
+      selfSponsored: true,
+      ownCode: delegationCode(auths[0]!.address),
+    },
   );
   const rehearsal = inc.rehearsals.flatMap((t) => t.authorizationList);
   const rg = new Guard(profiles.hotWallet);
@@ -183,7 +194,7 @@ function guardSummary(inc: Incident): GuardSummary & {
     return rg.check(
       authorizationPreimage(a),
       { as: "preimage" },
-      { signer: rec.ok ? rec.authority : undefined, nonce: a.nonce, now: i },
+      { signer: rec.ok ? rec.authority : undefined, nonce: a.nonce, now: i, ownCode: "0x" },
     );
   });
   const rows = [
@@ -352,6 +363,7 @@ async function main(argv: string[]): Promise<number> {
       "exit-on-change": { type: "boolean" },
       webhook: { type: "string" },
       port: { type: "string" },
+      "own-code": { type: "string" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
@@ -532,10 +544,17 @@ async function main(argv: string[]): Promise<number> {
           allowDelegates: [...(base.authorizations?.allowDelegates ?? []), ...extra],
         },
       };
+      const ownCode = o["own-code"] ?? "0x";
+      if (!/^0x([0-9a-fA-F]{2})*$/.test(ownCode)) usage("--own-code is the hex of eth_getCode on the key's address");
       const d = new Guard(policy).check(
         input,
         { as: o.digest ? "digest" : "preimage" },
-        { signer: o.signer, nonce: o.nonce ? BigInt(o.nonce) : undefined, selfSponsored: o.self },
+        {
+          signer: o.signer,
+          nonce: o.nonce ? BigInt(o.nonce) : undefined,
+          selfSponsored: o.self,
+          ownCode: ownCode as `0x${string}`,
+        },
       );
       if (o.json) return (console.log(json(d)), d.allow ? EXIT.ok : EXIT.refused);
       const c = d.classified;
@@ -561,6 +580,10 @@ async function main(argv: string[]): Promise<number> {
       console.log(
         `  ${style.dim(pad("verdict", 10))}${d.allow ? style.green("SIGN") : style.red(style.bold("REFUSE"))}  ${style.dim(`profile ${o.profile ?? "hot-wallet"}`)}`,
       );
+      if (o["own-code"] === undefined)
+        console.log(
+          `  ${pad("", 10)}${style.dim("own code assumed empty; pass --own-code <eth_getCode of the signer> to check that too")}`,
+        );
       for (const r of d.reasons)
         console.log(
           `  ${pad("", 10)}${pad(r.code, 26)} ${style.dim(r.message)}${r.tuple !== undefined ? style.dim(` (tuple ${r.tuple})`) : ""}`,

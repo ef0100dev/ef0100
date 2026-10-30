@@ -22,6 +22,11 @@ export interface GuardPolicy {
   allowKinds?: ClassifiedKind[];
   /** Sign bare 32-byte digests. Default false: a digest can be an EIP-7702 authorization and nothing shows it. */
   allowRawDigest?: boolean;
+  /**
+   * Refuse any request that does not say what the key's own account code is (`ctx.ownCode`, `"0x"` for none). Without
+   * it the own-code rule cannot fire, so a caller that forgets it silently loses that protection. On in `hotWallet`.
+   */
+  requireOwnCode?: boolean;
   /** Sign legacy transactions without a chain id (pre-EIP-155), which replay on every chain the key uses. Default false. */
   allowUnprotectedLegacy?: boolean;
   /**
@@ -128,6 +133,7 @@ export const profiles = {
    */
   hotWallet: {
     allowKinds: ["typed-tx", "set-code-tx", "legacy-tx"],
+    requireOwnCode: true,
     authorizations: { allowDelegates: [], allowClear: true, maxPerWindow: 1, windowMs: 600_000 },
   } satisfies GuardPolicy,
   /**
@@ -233,6 +239,12 @@ export class Guard {
           reasons.push({ code: "KIND_NOT_ALLOWED", message: `${classified.kind} is not in allowKinds` });
     }
     const ownCode = ctx.ownCode === undefined ? undefined : toBytes(ctx.ownCode);
+    if (ownCode === undefined && this.policy.requireOwnCode)
+      reasons.push({
+        code: "CONTEXT_MISSING",
+        message:
+          'this profile needs ctx.ownCode, eth_getCode of the key\'s own address ("0x" when it has none), on every request',
+      });
     if (
       ownCode &&
       ownCode.length > 0 &&

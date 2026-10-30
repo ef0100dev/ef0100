@@ -102,11 +102,20 @@ describe("the guard against the 50 authorizations", () => {
     const auth = guard.check(
       plan.authorizationPreimage,
       { as: "preimage" },
-      { signer: B14, nonce: CLEAR.nonce, selfSponsored: true },
+      {
+        signer: B14,
+        nonce: CLEAR.nonce,
+        selfSponsored: true,
+        ownCode: delegationCode(ATTACK.authorizationList[0]!.address),
+      },
     );
     expect(auth.allow).toBe(true);
     const tx = clearDelegationTx(plan, CLEAR.authorizationList[0]!);
-    const d = guard.check(tx.preimage, { as: "preimage" }, { signer: B14 });
+    const d = guard.check(
+      tx.preimage,
+      { as: "preimage" },
+      { signer: B14, ownCode: delegationCode(ATTACK.authorizationList[0]!.address) },
+    );
     expect(d.allow).toBe(true);
   });
 
@@ -124,7 +133,7 @@ describe("the guard against the 50 authorizations", () => {
       authorizationList: ATTACK.authorizationList,
     });
     expect(bytesToHex(keccak256(unsigned))).toBe(ATTACK.signingHash);
-    const d = new Guard().check(unsigned, { as: "preimage" }, { signer: ATTACK.from! });
+    const d = new Guard().check(unsigned, { as: "preimage" }, { signer: ATTACK.from!, ownCode: "0x" });
     expect(d.reasons.map((r) => r.code)).toEqual(["TOO_MANY_TUPLES"]);
     const wide = new Guard({ authorizations: { maxTuples: 64 } }).check(
       unsigned,
@@ -232,7 +241,7 @@ describe("OWN_CODE_PRESENT: once the key's own account has code", () => {
 
   it("refuses a routine transfer it would otherwise sign", () => {
     const g = new Guard();
-    expect(g.check(routine, { as: "preimage" }, { signer: B14 }).allow).toBe(true);
+    expect(g.check(routine, { as: "preimage" }, { signer: B14, ownCode: "0x" }).allow).toBe(true);
     const d = new Guard().check(routine, { as: "preimage" }, { signer: B14, ownCode: sweeperCode });
     expect(d.allow).toBe(false);
     expect(d.reasons[0]!.code).toBe("OWN_CODE_PRESENT");
@@ -306,7 +315,9 @@ describe("guard context and parsing", () => {
 
   it("refuses an authorization without the key it binds or the key's live nonce", () => {
     const pre = authorizationPreimage(tuple15);
-    expect(new Guard().check(pre, { as: "preimage" }).reasons.map((r) => r.code)).toEqual(["CONTEXT_MISSING"]);
+    expect(new Guard().check(pre, { as: "preimage" }, { ownCode: "0x" }).reasons.map((r) => r.code)).toEqual([
+      "CONTEXT_MISSING",
+    ]);
     const noNonce = new Guard({ authorizations: { allowDelegates: [{ address: tuple15.address }] } }).check(
       pre,
       { as: "preimage" },
@@ -350,9 +361,9 @@ describe("guard context and parsing", () => {
     ]);
     expect(padded.length).toBe(32);
     expect(classifySigningInput(padded, { as: "preimage" }).kind).toBe("unknown");
-    expect(new Guard().check(tiny, { as: "preimage" }, { signer: B14 }).reasons.map((r) => r.code)).toEqual([
-      "NO_CHAIN_ID",
-    ]);
+    expect(
+      new Guard().check(tiny, { as: "preimage" }, { signer: B14, ownCode: "0x" }).reasons.map((r) => r.code),
+    ).toEqual(["NO_CHAIN_ID"]);
   });
 
   it("refuses an empty authorization list and caps how many tuples it recovers", () => {
@@ -372,7 +383,7 @@ describe("guard context and parsing", () => {
     expect(classifySigningInput(tx([]), { as: "preimage" }).kind).toBe("unknown");
     expect(
       new Guard()
-        .check(tx(ATTACK.authorizationList.slice(0, 17)), { as: "preimage" }, { signer: B14 })
+        .check(tx(ATTACK.authorizationList.slice(0, 17)), { as: "preimage" }, { signer: B14, ownCode: "0x" })
         .reasons.map((r) => r.code),
     ).toEqual(["TOO_MANY_TUPLES"]);
   });

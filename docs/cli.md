@@ -93,6 +93,7 @@ What a key is being asked to sign, and whether the guard would sign it.
 - `--digest`: the hex is a bare 32-byte digest (always refused: no preimage). A 32-byte input that only parses as a
   transaction is refused either way.
 - `--signer <address>`, `--nonce <n>`, `--self` (self-sponsored: the authorization carries nonce + 1).
+- `--own-code <hex>`: `eth_getCode` of the signer's own address. Defaults to `0x` (none), and the output says so.
 - `--profile hot-wallet|user`, `--allow-delegate <address>` (repeatable).
 
 ### `guard serve`
@@ -111,6 +112,8 @@ curl -s 127.0.0.1:8787/check -H 'content-type: application/json' \
   `nonce` (a number, or a decimal or `0x` string), `ownCode` and `selfSponsored`. Answers `{allow, kind, reasons}`.
 - `GET /health` answers `{ok, version}`.
 - One guard per process, so its rate limit spans requests.
+- With the hot-wallet profile every request must carry `ownCode` (`"0x"` when the key's account has none), or it is
+  refused with `CONTEXT_MISSING`.
 - A request whose `Host` is not `127.0.0.1:<port>` or `localhost:<port>`, or that carries an `Origin` header, gets 403:
   a web page cannot reach it through DNS rebinding. Bodies above 256 KiB get 413, malformed ones 400.
 
