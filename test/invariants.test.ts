@@ -3,6 +3,8 @@ import { bytesToHex } from "../src/evm/bytes.ts";
 import { authorizationPreimage } from "../src/evm/eip7702.ts";
 import { Guard, type GuardPolicy } from "../src/guard/policy.ts";
 import { OwnCodeUnconfirmed, agreedOwnCode, type OwnCodeAnswer } from "../src/evm/owncode.ts";
+import { checkRecipient } from "../src/evm/recipient.ts";
+import { scanAddresses } from "../src/evm/scan.ts";
 
 // Each guard rule checked against random authorizations, seeded so a failure names its input. EF0100_FUZZ_RUNS raises
 // the count, as in fuzz.test.ts.
@@ -178,6 +180,74 @@ describe(`guard invariants (seed ${SEED}, ${RUNS} runs)`, () => {
       }
       expect(signed).toBeGreaterThan(0);
       expect(refused).toBeGreaterThan(0);
+    },
+    LIMIT,
+  );
+
+  it(
+    "--cross-check: if any endpoint sees a delegation, scan reports it and recipient holds",
+    async () => {
+      const r = rng(SEED + 8);
+      const urls = ["https://e0.example", "https://e1.example", "https://e2.example", "https://e3.example"];
+      let delegated = 0;
+      let held = 0;
+      for (let i = 0; i < RUNS; i++) {
+        const n = 1 + int(r, 4);
+        const code: (string | null)[] = Array.from({ length: n }, () => {
+          const k = int(r, 10);
+          if (k < 2) return null;
+          if (k < 6) return "0x";
+          if (k < 9) return `0xef0100${addr(r).slice(2)}`;
+          return bytesToHex(Uint8Array.from({ length: 1 + int(r, 40) }, () => int(r, 256)));
+        });
+        const fetch = (async (url: string | URL, init?: RequestInit) => {
+          const c = code[urls.indexOf(String(url))];
+          if (c === null || c === undefined) return new Response("", { status: 503 });
+          const calls = JSON.parse(String(init?.body)) as { id: number; method: string; params: unknown[] }[];
+          const result = (x: (typeof calls)[number]) =>
+            x.method === "eth_getTransactionCount"
+              ? "0x1"
+              : x.method === "eth_call"
+                ? "0x" + "0".repeat(64)
+                : String(x.params[0]).toLowerCase() === SIGNER.toLowerCase()
+                  ? c
+                  : "0x";
+          return new Response(JSON.stringify(calls.map((x) => ({ jsonrpc: "2.0", id: x.id, result: result(x) }))));
+        }) as typeof globalThis.fetch;
+        const chain = {
+          id: 1,
+          key: "ethereum",
+          name: "Ethereum",
+          rpc: urls.slice(0, n),
+          explorer: "https://x.example",
+        };
+        const answered = code.filter((c): c is string => c !== null);
+        const designators = answered.filter((c) => c.startsWith("0xef0100") && c.length === 48);
+        const scan = await scanAddresses([SIGNER], { chains: [chain], fetch, crossCheck: true });
+        const row = scan.rows[0]!;
+        if (!answered.length) {
+          expect(row.state, `run ${i}`).toBe("error");
+          continue;
+        }
+        if (designators.length) {
+          expect(row.state, `run ${i}`).toBe("delegated");
+          expect(designators.map((d) => `0x${d.slice(8)}`)).toContain(row.delegate!.toLowerCase());
+          delegated++;
+        } else expect(row.state, `run ${i}`).toBe(answered.some((c) => c !== "0x") ? "contract" : "eoa");
+        expect(row.disagreement !== undefined, `run ${i}`).toBe(new Set(answered).size > 1);
+        const rec = await checkRecipient(SIGNER, { chain, fetch, crossCheck: true });
+        if (answered.some((c) => c !== "0x")) {
+          expect(rec.allow, `run ${i}: ${rec.reasons.map((x) => x.code)}`).toBe(false);
+          held++;
+        } else expect(rec.allow, `run ${i}`).toBe(true);
+        if (new Set(answered).size > 1)
+          expect(
+            rec.reasons.map((x) => x.code),
+            `run ${i}`,
+          ).toContain("ENDPOINTS_DISAGREE");
+      }
+      expect(delegated).toBeGreaterThan(0);
+      expect(held).toBeGreaterThan(0);
     },
     LIMIT,
   );
