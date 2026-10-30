@@ -31,6 +31,19 @@ and matches it against the registry and the sweeper fingerprint.
 - `--chains <k,k>`: only these chains.
 - `--allow <address>`: a delegate you set on purpose (repeatable); it no longer raises the exit code.
 
+### `watch <address…>`
+
+Runs `scan` again every slot and prints one line, in UTC, whenever a delegation appears, changes or clears on any of
+the chains. The first scan is the baseline. An endpoint that does not answer never reads as a change: the address keeps
+its last known state, and the outage is printed once when it starts and once when it ends.
+
+- `--every <seconds>`: seconds between scans (default 12, one Ethereum slot; at least 2).
+- `--chains <k,k>`, `--allow <address>`: as for `scan`. An allowed delegate is still printed, without an alarm.
+- `--exit-on-change`: exit at the first delegation that is not allowed, with 1, or 2 for a known-malicious or
+  sweeper-like delegate. Without it, `watch` runs until it is stopped.
+- `--json`: one JSON object per event (`baseline`, `delegated`, `redelegated`, `cleared`, `code`, `unreachable`,
+  `back`), for a pager or a log pipeline.
+
 ### `decode <txhash|raw>`
 
 Decodes any transaction, including a blob transaction in its network form. For type 4 it rebuilds each authority's

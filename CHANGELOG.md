@@ -5,6 +5,14 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.1 — 2026-10-30
+
+- `watch <address…>`: runs `scan` every slot (12 s, or `--every`) and prints one line, in UTC, when a delegation
+  appears, changes or clears on any chain. An endpoint that stops answering never reads as a change. `--exit-on-change`
+  exits 1 at the first delegation that is not allowed (2 for a known-malicious or sweeper-like delegate); `--json`
+  prints one object per event. The diff is a pure function (`diffScan`), exported with the library.
+- Releases are published from GitHub Actions through npm trusted publishing, with provenance.
+
 ## 0.1.0 — 2026-10-30
 
 The first release: a decoder, a guard and a replay built from the bytes of the 2026-10-29 hot-wallet drain. Not

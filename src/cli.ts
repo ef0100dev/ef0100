@@ -12,6 +12,7 @@ import { planClearDelegation } from "./evm/remediate.js";
 import { RpcError, cleanText, rpcBatchAny } from "./evm/rpc.js";
 import { addressOfSecretKey, signDigest } from "./evm/secp256k1.js";
 import { scanAddresses } from "./evm/scan.js";
+import { diffScan, isAlarm, type WatchEvent, type WatchState } from "./evm/watch.js";
 import { Guard, profiles, type Decision, type GuardPolicy } from "./guard/policy.js";
 import { loadIncident, verifyFixtures, type Incident } from "./incident.js";
 import { checkSolanaTransaction } from "./sol/check.js";
@@ -50,6 +51,7 @@ usage
          --flows                       where the swept value went: the first hop out of both collectors
   ef0100 decode <txhash|raw>           a type-4 transaction, tuple by tuple, against the state it ran on
   ef0100 scan <address…>               is any of these accounts delegated, on 11 EVM chains? (also: ef0100 <address>)
+  ef0100 watch <address…>              scan again every slot; one line, in UTC, whenever a delegation appears, changes or clears
   ef0100 classify <hex>                what a key is being asked to sign, and whether the guard would sign it
   ef0100 guard test                    the guard against the incident's tuples, digests and clear
   ef0100 oracle                        why a raw-digest signer is an authorization signer (public test key)
@@ -68,7 +70,9 @@ options
   --chains <k,k>       scan only these chains (default: all of them)
   --rpc <url>          your own endpoint for --chain (also EF0100_RPC_<CHAIN>, e.g. EF0100_RPC_ETHEREUM)
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
-  --allow <address>    scan: a delegate you set on purpose does not count (repeatable)
+  --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
+  --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
+  --exit-on-change     watch: exit at the first delegation that is not allowed (1, or 2 for a sweeper)
   --profile <name>     classify: hot-wallet (default) or user
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
@@ -332,6 +336,8 @@ async function main(argv: string[]): Promise<number> {
       balance: { type: "string" },
       "allow-delegate": { type: "string", multiple: true },
       "max-fee": { type: "string" },
+      every: { type: "string" },
+      "exit-on-change": { type: "boolean" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
@@ -390,6 +396,70 @@ async function main(argv: string[]): Promise<number> {
         console.log(`\n  ${verdicts[res.exitCode]}\n`);
       }
       return res.exitCode;
+    }
+
+    case "watch": {
+      if (!rest.length) usage("watch needs at least one address");
+      const only = o.chains?.split(",").map((k) => findChain(k.trim(), chains) ?? usage(`unknown chain ${k}`));
+      const every = o.every == null ? 12 : Number(o.every);
+      if (!Number.isFinite(every) || every < 2) usage("--every is in seconds, at least 2");
+      const allow = new Set((o.allow ?? []).map((a) => a.toLowerCase()));
+      const list = only ?? chains;
+      const clock = (iso: string) => style.dim(`${iso.slice(11, 19)} UTC`);
+      const line = (e: WatchEvent): string | undefined => {
+        const where = `${pad(findChain(e.chain, chains)?.name ?? e.chain, 19)} ${short(e.address)}`;
+        switch (e.kind) {
+          case "baseline":
+            return e.state === "delegated"
+              ? `${clock(e.at)}  ${where}  ${e.allowed ? style.dim("delegated (allowed)") : style.yellow("delegated")} → ${e.delegate}  ${style.dim(e.label ?? "")}`
+              : undefined;
+          case "delegated":
+          case "redelegated": {
+            const mark = e.allowed
+              ? style.dim(e.kind)
+              : e.bad
+                ? style.red(style.bold("DELEGATED"))
+                : style.yellow(e.kind.toUpperCase());
+            const from = e.previous ? style.dim(` (was ${short(e.previous)})`) : "";
+            return `${clock(e.at)}  ${where}  ${mark} → ${e.delegate}${from}  ${style.dim(e.label ?? "")}`;
+          }
+          case "cleared":
+            return `${clock(e.at)}  ${where}  ${style.green("cleared")}${style.dim(` (was ${short(e.previous ?? "?")})`)}`;
+          case "code":
+            return `${clock(e.at)}  ${where}  ${style.yellow("code appeared")}`;
+          case "unreachable":
+            return `${clock(e.at)}  ${where}  ${style.yellow("no answer")}  ${style.dim(e.error ?? "")}`;
+          case "back":
+            return `${clock(e.at)}  ${where}  ${style.dim("answering again")}`;
+        }
+      };
+      if (!o.json)
+        console.log(
+          `\n  ${style.bold("watch")} ${rest.length} address${rest.length === 1 ? "" : "es"} on ${list.length} chain${list.length === 1 ? "" : "s"}, every ${every} s ${style.dim("(ctrl-c to stop)")}\n`,
+        );
+      let state: WatchState | undefined;
+      for (;;) {
+        const res = await scanAddresses(rest, { chains: list, allow: o.allow });
+        const first = !state;
+        const { events, next } = diffScan(state, res.rows, allow, new Date());
+        state = next;
+        for (const e of events) {
+          if (o.json) console.log(JSON.stringify(e));
+          else {
+            const text = line(e);
+            if (text) console.log(`  ${text}`);
+          }
+        }
+        if (first && !o.json) {
+          const clean = events.filter((e) => e.kind === "baseline" && e.state !== "delegated").length;
+          console.log(
+            `  ${clock(new Date().toISOString())}  ${style.dim(`baseline: ${clean} of ${res.rows.length} chain-address pairs with no delegation`)}`,
+          );
+        }
+        const alarms = events.filter(isAlarm);
+        if (o["exit-on-change"] && alarms.length) return alarms.some((e) => e.bad) ? EXIT.knownBad : EXIT.finding;
+        await new Promise((r) => setTimeout(r, every * 1000));
+      }
     }
 
     case "decode": {

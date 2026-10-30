@@ -9,6 +9,7 @@ export * from "./evm/fingerprint.js";
 export * from "./evm/chains.js";
 export * from "./evm/rpc.js";
 export * from "./evm/scan.js";
+export * from "./evm/watch.js";
 export * from "./evm/inspect.js";
 export * from "./evm/remediate.js";
 export * from "./guard/classify.js";
