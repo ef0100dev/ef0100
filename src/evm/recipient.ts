@@ -1,17 +1,20 @@
-import { toBytes, type Hex } from "./bytes.js";
+import { bytesToHex, toBytes, type Hex } from "./bytes.js";
 import { CHAINS, type Chain } from "./chains.js";
 import { parseDelegation } from "./eip7702.js";
 import { lookupDelegate } from "./registry.js";
-import { rpcBatchAny, type RpcOptions } from "./rpc.js";
+import { rpcBatchAll, rpcBatchAny, type RpcCall, type RpcOptions } from "./rpc.js";
+import { strongestCode } from "./scan.js";
 
 export type RecipientReason =
-  "DELEGATED" | "DELEGATED_TO_MALICIOUS" | "HAS_CODE" | "USDT_BLACKLISTED" | "USDC_BLACKLISTED";
+  "DELEGATED" | "DELEGATED_TO_MALICIOUS" | "HAS_CODE" | "USDT_BLACKLISTED" | "USDC_BLACKLISTED" | "ENDPOINTS_DISAGREE";
 
 export interface RecipientState {
   code: Hex | Uint8Array;
   /** true or false when the blacklist was read; null or absent when it was not (no table for the chain, or the call failed). */
   usdtBlacklisted?: boolean | null;
   usdcBlacklisted?: boolean | null;
+  /** With crossCheck: what each endpoint returned for the code, when they differed. Any difference holds the transfer. */
+  disagreement?: { endpoint: string; code: Hex }[];
 }
 
 export interface RecipientDecision {
@@ -46,6 +49,11 @@ export function judgeRecipient(state: RecipientState, policy: RecipientPolicy = 
       reasons.push({ code: "DELEGATED", message: `delegated to ${delegate}, which is not on your list` });
   } else if (code.length > 0 && !policy.allowContracts)
     reasons.push({ code: "HAS_CODE", message: "the recipient is a contract; refills go to EOAs unless allowed" });
+  if (state.disagreement?.length)
+    reasons.push({
+      code: "ENDPOINTS_DISAGREE",
+      message: `endpoints returned different code: ${state.disagreement.map((d) => `${d.endpoint} ${d.code.length > 12 ? `${d.code.slice(0, 12)}…` : d.code}`).join(", ")}`,
+    });
   if (state.usdtBlacklisted) reasons.push({ code: "USDT_BLACKLISTED", message: "Tether has blacklisted this address" });
   if (state.usdcBlacklisted) reasons.push({ code: "USDC_BLACKLISTED", message: "Circle has blacklisted this address" });
   return {
@@ -92,28 +100,50 @@ const word = (a: string) => a.slice(2).toLowerCase().padStart(64, "0");
  */
 export async function checkRecipient(
   address: string,
-  opts: RecipientPolicy & RpcOptions & { chain?: Chain } = {},
+  opts: RecipientPolicy & RpcOptions & { chain?: Chain; crossCheck?: boolean } = {},
 ): Promise<RecipientDecision & { chain: string }> {
   const chain = opts.chain ?? CHAINS[0]!;
-  const [code] = (await rpcBatchAny(
-    chain.rpc,
-    [{ method: "eth_getCode", params: [address, "latest"] }],
-    opts,
-  )) as Hex[];
+  const ask = async (calls: RpcCall[]) =>
+    opts.crossCheck
+      ? await rpcBatchAll(chain.rpc, calls, opts)
+      : [{ endpoint: "", results: await rpcBatchAny(chain.rpc, calls, opts) }];
+  const answers = await ask([{ method: "eth_getCode", params: [address, "latest"] }]);
+  const seen = answers.flatMap((a) => {
+    try {
+      return [{ endpoint: a.endpoint, code: toBytes(a.results[0] as string) }];
+    } catch {
+      return [];
+    }
+  });
+  if (!seen.length) throw new TypeError("no endpoint returned well-formed code for the recipient");
+  const code = strongestCode(seen.map((x) => x.code));
+  const differ = new Set(seen.map((x) => bytesToHex(x.code))).size > 1;
   const read = async (b: Blacklist | undefined): Promise<boolean | null> => {
     if (!b) return null;
     try {
-      const [r] = (await rpcBatchAny(
-        chain.rpc,
-        [{ method: "eth_call", params: [{ to: b.token, data: b.selector + word(address) }, "latest"] }],
-        opts,
-      )) as Hex[];
-      return r && r !== "0x" ? BigInt(r) !== 0n : null;
+      const got = (
+        await ask([{ method: "eth_call", params: [{ to: b.token, data: b.selector + word(address) }, "latest"] }])
+      )
+        .map((a) => a.results[0] as Hex)
+        .filter((r) => typeof r === "string" && /^0x[0-9a-fA-F]+$/.test(r) && r !== "0x")
+        .map((r) => BigInt(r) !== 0n);
+      return got.includes(true) ? true : got.length ? false : null;
     } catch {
       return null;
     }
   };
   const table = BLACKLISTS[chain.id] ?? {};
   const [usdt, usdc] = await Promise.all([read(table.usdt), read(table.usdc)]);
-  return { chain: chain.name, ...judgeRecipient({ code: code!, usdtBlacklisted: usdt, usdcBlacklisted: usdc }, opts) };
+  return {
+    chain: chain.name,
+    ...judgeRecipient(
+      {
+        code,
+        usdtBlacklisted: usdt,
+        usdcBlacklisted: usdc,
+        ...(differ ? { disagreement: seen.map((x) => ({ endpoint: x.endpoint, code: bytesToHex(x.code) })) } : {}),
+      },
+      opts,
+    ),
+  };
 }

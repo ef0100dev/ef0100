@@ -86,7 +86,8 @@ options
                        repeatable; owncode and guard serve then ask only these
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
-  --cross-check        scan, watch: ask every endpoint of each chain; if any one sees a delegation, it counts
+  --cross-check        scan, watch, recipient: ask every endpoint of the chain; one that sees a delegation is
+                       enough, and recipient holds when they differ
   --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
   --exit-on-change     watch: exit at the first delegation that is not allowed (1, or 2 for a sweeper)
   --webhook <url>      watch: POST each alarm and clear as JSON (Slack text, Discord content); https only
@@ -669,7 +670,11 @@ ${g.rows
     case "recipient": {
       const address = rest[0] ?? usage("recipient needs an address");
       if (!isAddress(address)) usage(`not an address: ${address}`);
-      const r = await checkRecipient(address, { chain: chain(), allowDelegates: o.allow });
+      const r = await checkRecipient(address, {
+        chain: chain(),
+        allowDelegates: o.allow,
+        crossCheck: o["cross-check"],
+      });
       if (o.json) return (console.log(json(r)), r.allow ? EXIT.ok : EXIT.refused);
       console.log(
         `\n  ${r.allow ? style.green("SEND") : style.red(style.bold("HOLD"))}  ${address}  ${style.dim(r.chain)}`,
