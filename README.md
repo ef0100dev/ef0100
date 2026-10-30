@@ -100,6 +100,7 @@ the data loads. The transaction counts are a dated snapshot, so they stop at the
 | `npx ef0100 recipient <address>` | Should funds go to this address now? Holds transfers to a delegated, contract or USDT/USDC-blacklisted address. Blacklists are read on Ethereum, Arbitrum, Avalanche, Polygon, Base and Optimism; elsewhere it says they were not checked. |
 | `npx ef0100 clear <address>` | The unsigned, self-sponsored type-4 transaction that clears a delegation. |
 | `npx ef0100 code <address>` | What a delegate's bytecode does, read statically: selectors (including ones the optimizer stored shifted), hardcoded addresses, and a sweeper-like heuristic that is a hint, not a verdict. |
+| `npx ef0100 owncode <address>` | `eth_getCode` from several endpoints, used only when every answer matches: the own code to hand the guard, which one lying or lagging endpoint can't fake. Exit 69 when they disagree. |
 | `npx ef0100 sol <signature>` | A Solana transaction before signing: durable nonces, Assign, SetAuthority, Approve, stake authorities, loader upgrades, Squads vault messages. |
 | `npx ef0100 sol nonces <pubkey>` | Every durable-nonce account a key controls: the signatures that never expire. |
 | `npx ef0100 oracle` | Signs the 32-byte digest of tuple #15 with a public test key and reads it back as a valid authorization. |

@@ -147,6 +147,19 @@ transfer selectors, a `CALLER` opcode and a hardcoded address, in code that does
 miss a sweeper (an ETH forwarder with its destination in storage has none of these traits) and it is a hint, not a
 verdict. Known sweepers are matched by address and by codehash.
 
+### `owncode <address>`
+
+`eth_getCode` of an address, from several endpoints at once, used only when every endpoint that answers returns the
+same bytes and at least `--quorum` of them answered (default 2). Without `--rpc` it asks the chain's public endpoints;
+with `--rpc` (repeatable) it asks only yours, which is what a signing service should do: point it at independent
+providers. Exit 0 when they agree there is no code, 1 when they agree on code (a delegation designator is shown with its
+delegate), 69 when they disagree or too few answered. Then don't pass an own code to the guard at all: the hot-wallet
+profile refuses with `CONTEXT_MISSING`. Never fall back to `0x`.
+
+```sh
+npx ef0100 owncode 0x28C6c06298d514Db089934071355E5743bf21d60 --rpc "$RPC_A" --rpc "$RPC_B" --rpc "$RPC_C" --json
+```
+
 ### `sol <signature|base64>`
 
 A Solana transaction before signing. By signature it is fetched from a public endpoint (or `EF0100_RPC_SOLANA`).
@@ -176,11 +189,11 @@ signature back as an authorization. The output is identical on every machine.
 | 2 | Refused, or delegated to a known-malicious or sweeper-like delegate |
 | 3 | Bundled data does not match `SHA256SUMS` |
 | 64 | Usage error |
-| 69 | No endpoint answered |
+| 69 | No endpoint answered; for `owncode`, the endpoints disagree or too few answered |
 | 70 | Internal error |
 
 ## Endpoints
 
-Keyless public endpoints by default. `EF0100_RPC_<CHAIN>` (for example `EF0100_RPC_ETHEREUM`) or `--rpc <url>` puts
-yours first for live and historical reads. Historical reads fall back to keyless archive gateways. Error messages
+Keyless public endpoints by default. `EF0100_RPC_<CHAIN>` (for example `EF0100_RPC_ETHEREUM`) or `--rpc <url>`
+(repeatable) puts yours first for live and historical reads; `owncode` asks only the `--rpc` endpoints when you give any. Historical reads fall back to keyless archive gateways. Error messages
 print an endpoint's host only.

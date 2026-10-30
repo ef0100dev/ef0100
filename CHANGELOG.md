@@ -5,6 +5,14 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Changed: `readOwnCode`'s `quorum` is now how many endpoints must answer, and every answer must match. In 0.1.10 a
+  value that reached the quorum won even when another endpoint returned something else, so two lagging endpoints
+  saying `"0x"` could outvote one that already saw a delegation. Now any disagreement throws. `OwnCodeUnconfirmed`
+  carries `.answers`; `ownCodeAnswers` and `agreedOwnCode` are exported.
+- `ef0100 owncode <address>`: the same check from a shell. Exit 0 no code, 1 code, 69 disagreement or too few answers;
+  `--quorum` (default 2).
+- `--rpc` is repeatable; `owncode` asks only the `--rpc` endpoints when any are given.
+
 ## 0.1.10 — 2026-10-30
 
 - `readOwnCode(address, urls, { quorum, block })` reads `eth_getCode` from several endpoints in parallel and returns it

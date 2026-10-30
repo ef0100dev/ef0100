@@ -5,6 +5,7 @@ import { bytesToHex, hexToBytes, isAddress, type Hex } from "./evm/bytes.js";
 import { CHAINS, findChain, withRpcOverrides } from "./evm/chains.js";
 import { authorizationDigest, authorizationPreimage, delegationCode, recoverAuthority } from "./evm/eip7702.js";
 import { fingerprintCode } from "./evm/fingerprint.js";
+import { OwnCodeUnconfirmed, agreedOwnCode, ownCodeAnswers } from "./evm/owncode.js";
 import { inspectTransaction } from "./evm/inspect.js";
 import { lookupDelegate } from "./evm/registry.js";
 import { checkRecipient } from "./evm/recipient.js";
@@ -69,6 +70,7 @@ usage
   ef0100 recipient <address>           top-up guard: should funds go to this address right now?
   ef0100 clear <address>               unsigned self-sponsored transaction that clears a delegation
   ef0100 code <address|hex>            what a delegate's bytecode does (static read, no execution)
+  ef0100 owncode <address>             eth_getCode of an address, used only when every endpoint that answers agrees
   ef0100 sol <signature|base64>        Solana pre-signing check: durable nonces, Assign, authorities, Squads
          --template <nonce-authority>  the signer's routine: durable nonces from its own pool
          --routine                     plain SOL transfers are this signer's job (exchange withdrawals)
@@ -79,7 +81,8 @@ options
   --chain <key>        ethereum (default), base, arbitrum, optimism, bsc, polygon, gnosis, unichain, linea,
                        avalanche, scroll
   --chains <k,k>       scan only these chains (default: all of them)
-  --rpc <url>          your own endpoint for --chain (also EF0100_RPC_<CHAIN>, e.g. EF0100_RPC_ETHEREUM)
+  --rpc <url>          your own endpoint for --chain (also EF0100_RPC_<CHAIN>, e.g. EF0100_RPC_ETHEREUM);
+                       repeatable, and owncode then asks only these
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
   --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
@@ -89,12 +92,13 @@ options
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
   --own-code <hex>     classify: eth_getCode of the signer's own address (default 0x, none)
+  --quorum <n>         owncode: how many endpoints must answer (default 2; every answer must still match)
   --speed <n>          replay animation speed; 0 prints the final frame (default when not a terminal)
   --json               machine-readable output
 
 exit codes
   0 clean or allowed · 1 finding (delegated, spray, review) · 2 refused, or a known-malicious or sweeper-like
-  delegate · 3 bundled data does not match SHA256SUMS · 64 usage · 69 no endpoint answered
+  delegate · 3 bundled data does not match SHA256SUMS · 64 usage · 69 no endpoint answered (owncode: no agreement)
 
 It reads public chain data over keyless endpoints by default. It never asks for or signs with your keys; oracle signs with a public test key.
 `;
@@ -341,7 +345,7 @@ async function main(argv: string[]): Promise<number> {
     options: {
       chain: { type: "string" },
       chains: { type: "string" },
-      rpc: { type: "string" },
+      rpc: { type: "string", multiple: true },
       watch: { type: "string", multiple: true },
       allow: { type: "string", multiple: true },
       json: { type: "boolean" },
@@ -364,6 +368,7 @@ async function main(argv: string[]): Promise<number> {
       webhook: { type: "string" },
       port: { type: "string" },
       "own-code": { type: "string" },
+      quorum: { type: "string" },
       log: { type: "boolean" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
@@ -377,7 +382,7 @@ async function main(argv: string[]): Promise<number> {
     rest = [cmd, ...rest];
     cmd = "scan";
   }
-  const overrides: Record<string, string> = o.rpc ? { [o.chain ?? "ethereum"]: o.rpc } : {};
+  const overrides: Record<string, string[]> = o.rpc?.length ? { [o.chain ?? "ethereum"]: o.rpc } : {};
   const chains = withRpcOverrides(CHAINS, process.env, overrides);
   const chain = () => findChain(o.chain ?? "ethereum", chains) ?? usage(`unknown chain ${o.chain}`);
 
@@ -710,7 +715,7 @@ ${g.rows
     }
 
     case "sol": {
-      const urls = solanaEndpoints(process.env, o.chain === "solana" ? o.rpc : undefined);
+      const urls = solanaEndpoints(process.env, o.chain === "solana" ? o.rpc?.[0] : undefined);
       if (rest[0] === "nonces") {
         const who = rest[1] ?? usage("sol nonces needs a public key");
         let list;
@@ -771,6 +776,67 @@ ${g.rows
       }
       console.log("");
       return r.verdict === "BLOCK" ? EXIT.refused : r.verdict === "REVIEW" ? EXIT.finding : EXIT.ok;
+    }
+
+    case "owncode": {
+      const address = rest[0] ?? usage("owncode needs an address");
+      if (!isAddress(address)) usage(`not an address: ${address}`);
+      const c = chain();
+      const urls = o.rpc?.length ? o.rpc : c.rpc;
+      const quorum = o.quorum === undefined ? Math.min(2, urls.length) : Number(o.quorum);
+      if (!Number.isInteger(quorum) || quorum < 1 || quorum > urls.length)
+        usage(`--quorum is 1 to ${urls.length}, the number of endpoints asked`);
+      const answers = await ownCodeAnswers(address, urls);
+      let ownCode: Hex | undefined;
+      let reason: string | undefined;
+      try {
+        ownCode = agreedOwnCode(answers, quorum);
+      } catch (e) {
+        if (!(e instanceof OwnCodeUnconfirmed)) throw e;
+        reason = new Set(answers.flatMap((a) => (a.code ? [a.code] : []))).size > 1 ? "disagree" : "too few answers";
+      }
+      const delegate =
+        ownCode && ownCode.length === 48 && ownCode.startsWith("0xef0100") ? `0x${ownCode.slice(8)}` : undefined;
+      const exit = ownCode === undefined ? EXIT.unavailable : ownCode === "0x" ? EXIT.ok : EXIT.finding;
+      if (o.json) {
+        console.log(
+          json({
+            address,
+            chain: c.key,
+            quorum,
+            answers,
+            confirmed: ownCode !== undefined,
+            ownCode: ownCode ?? null,
+            delegate: delegate ?? null,
+            reason: reason ?? null,
+          }),
+        );
+        return exit;
+      }
+      console.log(`\n  ${style.bold(address)} ${style.dim(`on ${c.name}`)}`);
+      const width = Math.max(...answers.map((a) => a.endpoint.length)) + 2;
+      for (const a of answers)
+        console.log(
+          `  ${pad(a.endpoint.replace(/^https?:\/\//, ""), width)}${a.code !== undefined ? (a.code === "0x" ? style.dim("0x  no code") : short(a.code, 18, 4)) : `${style.yellow("no answer")}  ${style.dim(a.error ?? "")}`}`,
+        );
+      const answered = answers.filter((a) => a.code !== undefined).length;
+      if (ownCode === undefined)
+        console.log(
+          `\n  ${style.red(style.bold("not confirmed"))}  ${reason === "disagree" ? "the endpoints disagree" : `${answered} of ${answers.length} answered, ${quorum} needed`}; don't pass an own code, let the guard refuse\n`,
+        );
+      else {
+        const what =
+          ownCode === "0x"
+            ? style.green("no code")
+            : delegate
+              ? `${style.yellow("delegated")} → ${delegate}${lookupDelegate(delegate) ? style.dim(`  ${lookupDelegate(delegate)!.label}`) : ""}`
+              : style.yellow(`${int(ownCode.length / 2 - 1)} bytes of contract code`);
+        console.log(`\n  ${what}  ${style.dim(`${answered} of ${answers.length} answered, all agree`)}`);
+        console.log(
+          `  ${style.dim(ownCode.length > 66 ? "the full bytes are in --json (ownCode)" : `pass it on: --own-code ${ownCode}`)}\n`,
+        );
+      }
+      return exit;
     }
 
     case "code": {
