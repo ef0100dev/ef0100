@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.11 — 2026-10-30
+
 - Changed: `readOwnCode`'s `quorum` is now how many endpoints must answer, and every answer must match. In 0.1.10 a
   value that reached the quorum won even when another endpoint returned something else, so two lagging endpoints
   saying `"0x"` could outvote one that already saw a delegation. Now any disagreement throws. `OwnCodeUnconfirmed`
