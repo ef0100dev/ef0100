@@ -20,6 +20,10 @@
       "types": "./dist/integrations/viem.d.ts",
       "default": "./dist/integrations/viem.js"
     },
+    "./ethers": {
+      "types": "./dist/integrations/ethers.d.ts",
+      "default": "./dist/integrations/ethers.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -50,6 +54,7 @@
   "devDependencies": {
     "@types/node": "26.6.6",
     "@vitest/coverage-v8": "5.0.5",
+    "ethers": "6.17.0",
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "viem": "2.57.7",
@@ -81,9 +86,13 @@
     "url": "https://github.com/ef0100dev/ef0100/issues"
   },
   "peerDependencies": {
+    "ethers": ">=6.14.0",
     "viem": ">=2.20.0"
   },
   "peerDependenciesMeta": {
+    "ethers": {
+      "optional": true
+    },
     "viem": {
       "optional": true
     }

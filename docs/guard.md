@@ -45,6 +45,28 @@ await account.signAuthorization({ chainId: 1, address: sweeper, nonce }); // thr
 `signTypedData` as `0x19 0x01 ‖ domainSeparator ‖ structHash` (`typedDataPreimage`, checked against viem's
 `hashTypedData` in the tests).
 
+## With ethers
+
+`ef0100/ethers` does the same for an ethers v6 signer. ethers wallets keep their key in private fields, so instead of
+returning a new object, `guardSigner` replaces `signTransaction`, `signMessage`, `signTypedData` and `authorize` on the
+instance you pass and returns it. Anything ethers signs from the inside goes through the guard too: `sendTransaction`
+signs through `this.signTransaction`, and a refusal stops it before broadcast. `connect()` returns a guarded signer.
+
+```ts
+import { Wallet } from "ethers";
+import { Guard, profiles } from "ef0100";
+import { guardSigner } from "ef0100/ethers";
+
+const wallet = guardSigner(new Wallet(key, provider), new Guard(profiles.hotWallet), async () => ({
+  nonce: await provider.getTransactionCount(address, "pending"),
+  ownCode: await provider.getCode(address),
+}));
+await wallet.authorize({ address: sweeper }); // throws GuardRefusal
+```
+
+`authorize` is judged after `populateAuthorization` fills in the chain id and nonce, so the guard sees the tuple that
+would be signed. ethers is an optional peer dependency.
+
 ## The context
 
 | Field | Used for |
