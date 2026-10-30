@@ -1,0 +1,63 @@
+name: ef0100 scan
+description: Fail the job when any of your addresses is EIP-7702 delegated on any of 11 EVM chains.
+author: ef0100dev
+branding:
+  icon: shield
+  color: red
+inputs:
+  addresses:
+    description: Addresses to check, separated by spaces or new lines.
+    required: true
+  chains:
+    description: Comma-separated chain keys (default all 11, see docs/cli.md).
+    required: false
+    default: ""
+  allow:
+    description: Delegates you set on purpose, separated by spaces; they do not fail the job.
+    required: false
+    default: ""
+  version:
+    description: The ef0100 version to run from npm.
+    required: false
+    default: "0.1.4"
+  fail-on-unreachable:
+    description: Fail when a chain does not answer (exit 69) instead of warning.
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: ef0100 scan
+      shell: bash
+      env:
+        EF_ADDRESSES: ${{ inputs.addresses }}
+        EF_CHAINS: ${{ inputs.chains }}
+        EF_ALLOW: ${{ inputs.allow }}
+        EF_VERSION: ${{ inputs.version }}
+        EF_STRICT: ${{ inputs.fail-on-unreachable }}
+      run: |
+        set +e -uo pipefail
+        [[ "$EF_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version must be x.y.z"; exit 64; }
+        args=()
+        for a in $EF_ADDRESSES; do
+          [[ "$a" =~ ^0x[0-9a-fA-F]{40}$ ]] || { echo "::error::not an address: ${a:0:64}"; exit 64; }
+          args+=("$a")
+        done
+        [ ${#args[@]} -gt 0 ] || { echo "::error::no addresses"; exit 64; }
+        if [ -n "$EF_CHAINS" ]; then
+          [[ "$EF_CHAINS" =~ ^[a-z0-9,-]+$ ]] || { echo "::error::chains must be keys like ethereum,base"; exit 64; }
+          args+=(--chains "$EF_CHAINS")
+        fi
+        for d in $EF_ALLOW; do
+          [[ "$d" =~ ^0x[0-9a-fA-F]{40}$ ]] || { echo "::error::not an address in allow: ${d:0:64}"; exit 64; }
+          args+=(--allow "$d")
+        done
+        cd "${RUNNER_TEMP:-/tmp}"
+        npx -y "ef0100@$EF_VERSION" scan "${args[@]}"
+        code=$?
+        if [ "$code" = 69 ] && [ "$EF_STRICT" != "true" ]; then
+          echo "::warning::a chain did not answer; the others were checked"
+          exit 0
+        fi
+        [ "$code" = 0 ] || echo "::error::ef0100 scan exited $code (1 delegated, 2 delegated to a sweeper or known-malicious delegate, 69 no answer)"
+        exit "$code"
