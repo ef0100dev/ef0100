@@ -96,3 +96,69 @@ export function diffScan(
 export function isAlarm(e: WatchEvent): boolean {
   return (e.kind === "delegated" || e.kind === "redelegated" || e.kind === "code") && !e.allowed;
 }
+
+/** One line a person can read in a chat channel. Addresses are full: a short form cannot be checked against anything. */
+export function describeEvent(e: WatchEvent): string {
+  const at = `${e.at.slice(0, 19).replace("T", " ")} UTC`;
+  switch (e.kind) {
+    case "delegated":
+    case "redelegated":
+      return `${e.bad ? "DELEGATED TO A SWEEPER" : e.kind === "delegated" ? "Delegated" : "Redelegated"}: ${e.address} on ${e.chain} → ${e.delegate}${e.label ? ` (${e.label})` : ""}${e.previous ? `, was ${e.previous}` : ""} · ${at}`;
+    case "cleared":
+      return `Cleared: ${e.address} on ${e.chain}, no delegation now${e.previous ? ` (was ${e.previous})` : ""} · ${at}`;
+    case "code":
+      return `Code appeared: ${e.address} on ${e.chain} · ${at}`;
+    case "unreachable":
+      return `No answer: ${e.chain} for ${e.address} · ${at}`;
+    case "back":
+      return `Answering again: ${e.chain} for ${e.address} · ${at}`;
+    case "baseline":
+      return `Watching ${e.address} on ${e.chain}: ${e.state} · ${at}`;
+  }
+}
+
+/** Events worth a message: alarms, and a clear, so the channel also hears when it is over. */
+export function isNotifiable(e: WatchEvent): boolean {
+  return isAlarm(e) || e.kind === "cleared";
+}
+
+/**
+ * A webhook URL is a credential: anyone holding it can post to the channel. Only https is accepted, or http to this
+ * machine for a local relay.
+ */
+export function checkWebhookUrl(url: string): URL {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new TypeError("--webhook is not a URL");
+  }
+  const local = u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "[::1]";
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && local))
+    throw new TypeError("--webhook must be https (or http to localhost)");
+  return u;
+}
+
+/**
+ * Posts one event as JSON: `text` for Slack, `content` for Discord, and the event itself for anything else. Never
+ * throws: a failed delivery is returned, so the watch keeps running.
+ */
+export async function postWebhook(
+  url: string,
+  e: WatchEvent,
+  opts: { fetch?: typeof fetch; timeoutMs?: number } = {},
+): Promise<{ ok: boolean; status?: number; error?: string }> {
+  const text = describeEvent(e);
+  try {
+    const res = await (opts.fetch ?? fetch)(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, content: text, event: e }),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 5000),
+      redirect: "error",
+    });
+    return res.ok ? { ok: true, status: res.status } : { ok: false, status: res.status };
+  } catch (err) {
+    return { ok: false, error: (err as Error).name === "TimeoutError" ? "timeout" : "unreachable" };
+  }
+}

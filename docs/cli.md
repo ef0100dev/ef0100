@@ -43,6 +43,9 @@ its last known state, and the outage is printed once when it starts and once whe
   sweeper-like delegate. Without it, `watch` runs until it is stopped.
 - `--json`: one JSON object per event (`baseline`, `delegated`, `redelegated`, `cleared`, `code`, `unreachable`,
   `back`), for a pager or a log pipeline.
+- `--webhook <url>`: POST each alarm and each clear as JSON: `text` (Slack), `content` (Discord) and the event. https
+  only, or http to localhost for a local relay; redirects are refused. The URL is a credential and is never printed
+  (only its host, when a delivery fails). A failed delivery is printed and the watch keeps running.
 
 ### `decode <txhash|raw>`
 

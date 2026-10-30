@@ -12,7 +12,16 @@ import { planClearDelegation } from "./evm/remediate.js";
 import { RpcError, cleanText, rpcBatchAny } from "./evm/rpc.js";
 import { addressOfSecretKey, signDigest } from "./evm/secp256k1.js";
 import { scanAddresses } from "./evm/scan.js";
-import { diffScan, isAlarm, type WatchEvent, type WatchState } from "./evm/watch.js";
+import { redactRpc } from "./evm/rpc.js";
+import {
+  checkWebhookUrl,
+  diffScan,
+  isAlarm,
+  isNotifiable,
+  postWebhook,
+  type WatchEvent,
+  type WatchState,
+} from "./evm/watch.js";
 import { Guard, profiles, type Decision, type GuardPolicy } from "./guard/policy.js";
 import { loadIncident, verifyFixtures, type Incident } from "./incident.js";
 import { checkSolanaTransaction } from "./sol/check.js";
@@ -73,6 +82,7 @@ options
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
   --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
   --exit-on-change     watch: exit at the first delegation that is not allowed (1, or 2 for a sweeper)
+  --webhook <url>      watch: POST each alarm and clear as JSON (Slack text, Discord content); https only
   --profile <name>     classify: hot-wallet (default) or user
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
@@ -338,6 +348,7 @@ async function main(argv: string[]): Promise<number> {
       "max-fee": { type: "string" },
       every: { type: "string" },
       "exit-on-change": { type: "boolean" },
+      webhook: { type: "string" },
       "priority-fee": { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
@@ -405,6 +416,14 @@ async function main(argv: string[]): Promise<number> {
       if (!Number.isFinite(every) || every < 2) usage("--every is in seconds, at least 2");
       const allow = new Set((o.allow ?? []).map((a) => a.toLowerCase()));
       const list = only ?? chains;
+      let hook: string | undefined;
+      if (o.webhook) {
+        try {
+          hook = checkWebhookUrl(o.webhook).href;
+        } catch (e) {
+          usage((e as Error).message);
+        }
+      }
       const clock = (iso: string) => style.dim(`${iso.slice(11, 19)} UTC`);
       const line = (e: WatchEvent): string | undefined => {
         const where = `${pad(findChain(e.chain, chains)?.name ?? e.chain, 19)} ${short(e.address)}`;
@@ -456,6 +475,14 @@ async function main(argv: string[]): Promise<number> {
             `  ${clock(new Date().toISOString())}  ${style.dim(`baseline: ${clean} of ${res.rows.length} chain-address pairs with no delegation`)}`,
           );
         }
+        if (hook)
+          for (const e of events.filter(isNotifiable)) {
+            const sent = await postWebhook(hook, e);
+            if (!sent.ok && !o.json)
+              console.log(
+                `  ${clock(new Date().toISOString())}  ${style.yellow("webhook not delivered")}  ${style.dim(`${redactRpc(hook)} ${sent.status ?? sent.error ?? ""}`)}`,
+              );
+          }
         const alarms = events.filter(isAlarm);
         if (o["exit-on-change"] && alarms.length) return alarms.some((e) => e.bad) ? EXIT.knownBad : EXIT.finding;
         await new Promise((r) => setTimeout(r, every * 1000));

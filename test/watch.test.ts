@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ScanRow } from "../src/evm/scan.ts";
-import { diffScan, isAlarm } from "../src/evm/watch.ts";
+import { checkWebhookUrl, describeEvent, diffScan, isAlarm, isNotifiable, postWebhook } from "../src/evm/watch.ts";
 
 const B14 = "0x28C6c06298d514Db089934071355E5743bf21d60";
 const SWEEPER = "0x63e842B054Bd624a465454D533C33F573e9c6fAe";
@@ -78,5 +78,63 @@ describe("watch", () => {
     expect(a.events.map((e) => e.kind)).toEqual(["unreachable"]);
     const b = diffScan(a.next, [eoa()]);
     expect(b.events.map((e) => e.kind)).toEqual(["baseline"]);
+  });
+});
+
+describe("watch webhook", () => {
+  const alarm = () => {
+    const a = diffScan(undefined, [eoa()]);
+    return diffScan(a.next, [delegated()], new Set(), at).events[0];
+  };
+
+  it("names the full address, the chain, the delegate and the UTC time", () => {
+    expect(describeEvent(alarm())).toBe(
+      `DELEGATED TO A SWEEPER: ${B14} on ethereum → ${SWEEPER} (sweeper-like code) · 2026-10-29 20:20:59 UTC`,
+    );
+  });
+
+  it("sends alarms and clears, not baselines or outages", () => {
+    const a = diffScan(undefined, [delegated()]);
+    expect(a.events.some(isNotifiable)).toBe(false);
+    const b = diffScan(a.next, [eoa()]);
+    expect(b.events.every(isNotifiable)).toBe(true);
+    const c = diffScan(b.next, [down()]);
+    expect(c.events.some(isNotifiable)).toBe(false);
+  });
+
+  it("accepts https, and http only to this machine", () => {
+    expect(checkWebhookUrl("https://hooks.slack.com/services/T/B/x").hostname).toBe("hooks.slack.com");
+    expect(checkWebhookUrl("http://127.0.0.1:8787/hook").port).toBe("8787");
+    expect(() => checkWebhookUrl("http://example.com/hook")).toThrow(/https/);
+    expect(() => checkWebhookUrl("not a url")).toThrow(/not a URL/);
+  });
+
+  it("posts Slack text, Discord content and the event, without following redirects", async () => {
+    const seen: { url: string; init: RequestInit }[] = [];
+    const f = (async (url: string, init: RequestInit) => {
+      seen.push({ url, init });
+      return new Response("ok", { status: 200 });
+    }) as unknown as typeof fetch;
+    const res = await postWebhook("https://hooks.example/abc", alarm(), { fetch: f });
+    expect(res).toEqual({ ok: true, status: 200 });
+    const body = JSON.parse(String(seen[0].init.body));
+    expect(body.text).toBe(body.content);
+    expect(body.event.kind).toBe("delegated");
+    expect(seen[0].init.redirect).toBe("error");
+  });
+
+  it("returns a failed delivery instead of throwing, so the watch keeps running", async () => {
+    const refused = (async () => new Response("no", { status: 403 })) as unknown as typeof fetch;
+    expect(await postWebhook("https://hooks.example/abc", alarm(), { fetch: refused })).toEqual({
+      ok: false,
+      status: 403,
+    });
+    const dead = (async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    expect(await postWebhook("https://hooks.example/abc", alarm(), { fetch: dead })).toEqual({
+      ok: false,
+      error: "unreachable",
+    });
   });
 });

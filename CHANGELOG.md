@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `watch --webhook <url>`: each alarm and each clear posted as JSON, readable in Slack and Discord as is. https only
+  (http to localhost for a relay), no redirects, the URL never printed; a failed delivery never stops the watch.
 - `pnpm bench`: median and p99 per call for the guard and the decoders (`bench/guard.bench.mjs`).
 
 ## 0.1.2 — 2026-10-30
