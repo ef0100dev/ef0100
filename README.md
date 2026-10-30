@@ -32,7 +32,7 @@ guard in front of a signer that refuses what it cannot decode: no preimage, no s
 ```
 $ npx ef0100 replay
 
-ef0100 0.1.0 · replay 2026-10-29 · offline · fixtures sha256 ok
+ef0100 0.1.1 · replay 2026-10-29 · offline · fixtures sha256 ok
 
   tx       0xad99264d…ccd051298b · type 4 · block 26,300,753 · 20:20:59 UTC
   bytes    4,916 · keccak(raw) = tx hash
@@ -94,6 +94,7 @@ the data loads. The transaction counts are a dated snapshot, so they stop at the
 |---|---|
 | `npx ef0100 replay` | The drain from its own bytes, offline. `--table` for all 50 tuples, `--timeline` for the 3h49m36s, `--flows` for where the value went next. |
 | `npx ef0100 <address…>` | Is any of these accounts delegated, on any of 11 EVM chains? Exit 0 clean, 1 delegated, 2 to a known-malicious or sweeper-like delegate. |
+| `npx ef0100 watch <address>` | `scan` again every slot: one line, in UTC, the moment a delegation appears, changes or clears. `--exit-on-change` for scripts and pagers. |
 | `npx ef0100 decode <txhash\|raw>` | A type-4 transaction, tuple by tuple, against the state it ran on: the nonce at the end of the previous block plus every earlier transaction in the same block. Raw bytes are looked up by their hash, on the chain they name. |
 | `npx ef0100 classify <hex>` | What a key is being asked to sign (EIP-7702 authorization, set-code transaction, typed transaction, EIP-712, personal message, bare digest), and whether the guard would sign it. |
 | `npx ef0100 recipient <address>` | Should funds go to this address now? Holds transfers to a delegated, contract or USDT/USDC-blacklisted address. Blacklists are read on Ethereum, Arbitrum, Avalanche, Polygon, Base and Optimism; elsewhere it says they were not checked. |
