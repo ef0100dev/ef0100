@@ -53,6 +53,7 @@ runs:
           args+=(--allow "$d")
         done
         cd "${RUNNER_TEMP:-/tmp}"
+        npm view "ef0100@$EF_VERSION" version >/dev/null 2>&1 || { echo "::error::ef0100@$EF_VERSION is not on npm"; exit 70; }
         npx -y "ef0100@$EF_VERSION" scan "${args[@]}"
         code=$?
         if [ "$code" = 69 ] && [ "$EF_STRICT" != "true" ]; then
