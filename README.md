@@ -32,7 +32,7 @@ guard in front of a signer that refuses what it cannot decode: no preimage, no s
 ```
 $ npx ef0100 replay
 
-ef0100 0.1.1 · replay 2026-10-29 · offline · fixtures sha256 ok
+ef0100 0.1.2 · replay 2026-10-29 · offline · fixtures sha256 ok
 
   tx       0xad99264d…ccd051298b · type 4 · block 26,300,753 · 20:20:59 UTC
   bytes    4,916 · keccak(raw) = tx hash
