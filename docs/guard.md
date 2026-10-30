@@ -87,7 +87,8 @@ over three endpoints rides out one outage. `OwnCodeUnconfirmed` carries every an
 host only, no path or key). Let it stop the request, or pass no `ownCode`: the `hotWallet` profile then refuses with
 `CONTEXT_MISSING`. Don't fall back to `"0x"`. Use independent providers; three URLs on one provider agree with each
 other by construction. `ownCodeAnswers` and `agreedOwnCode` are the two halves, for callers that want to show the
-answers; `npx ef0100 owncode <address> --rpc … --rpc …` does the same from a shell.
+answers; `npx ef0100 owncode <address> --rpc … --rpc …` does the same from a shell, and
+`npx ef0100 guard serve --rpc … --rpc …` reads it on every request so a signer in another language doesn't have to.
 
 ## Audit trail
 

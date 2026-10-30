@@ -65,7 +65,8 @@ usage
   ef0100 watch <address…>              scan again every slot; one line, in UTC, whenever a delegation appears, changes or clears
   ef0100 classify <hex>                what a key is being asked to sign, and whether the guard would sign it
   ef0100 guard test                    the guard against the incident's tuples, digests and clear
-  ef0100 guard serve                   the guard on http://127.0.0.1:8787/check for signers in any language (--port, --profile, --log)
+  ef0100 guard serve                   the guard on http://127.0.0.1:8787/check for signers in any language (--port, --profile, --log,
+                                       --rpc to read the signer's own code itself)
   ef0100 oracle                        why a raw-digest signer is an authorization signer (public test key)
   ef0100 recipient <address>           top-up guard: should funds go to this address right now?
   ef0100 clear <address>               unsigned self-sponsored transaction that clears a delegation
@@ -82,7 +83,7 @@ options
                        avalanche, scroll
   --chains <k,k>       scan only these chains (default: all of them)
   --rpc <url>          your own endpoint for --chain (also EF0100_RPC_<CHAIN>, e.g. EF0100_RPC_ETHEREUM);
-                       repeatable, and owncode then asks only these
+                       repeatable; owncode and guard serve then ask only these
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
   --every <seconds>    watch: seconds between scans (default 12, one Ethereum slot; at least 2)
@@ -92,7 +93,7 @@ options
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
   --own-code <hex>     classify: eth_getCode of the signer's own address (default 0x, none)
-  --quorum <n>         owncode: how many endpoints must answer (default 2; every answer must still match)
+  --quorum <n>         owncode, guard serve: how many endpoints must answer (default 2; every answer must match)
   --speed <n>          replay animation speed; 0 prints the final frame (default when not a terminal)
   --json               machine-readable output
 
@@ -604,15 +605,26 @@ async function main(argv: string[]): Promise<number> {
         const port = o.port == null ? 8787 : Number(o.port);
         if (!Number.isInteger(port) || port < 1 || port > 65535) usage("--port is 1 to 65535");
         const audit = o.log ? { onDecision: (r: DecisionRecord) => console.log(JSON.stringify(r)) } : {};
+        const urls = o.rpc ?? [];
+        const quorum = o.quorum === undefined ? Math.min(2, urls.length) : Number(o.quorum);
+        if (urls.length && (!Number.isInteger(quorum) || quorum < 1 || quorum > urls.length))
+          usage(`--quorum is 1 to ${urls.length}, the --rpc endpoints given`);
+        if (!urls.length && o.quorum !== undefined) usage("--quorum needs --rpc endpoints");
         const server = createGuardServer(new Guard(o.profile === "user" ? profiles.user : profiles.hotWallet, audit), {
           version: pkg.version,
+          ...(urls.length ? { ownCode: { urls, quorum } } : {}),
         });
         await new Promise<void>((resolve, reject) => {
           server.once("error", reject);
           server.listen(port, "127.0.0.1", () => resolve());
         });
         console.log(
-          `\n  ${style.bold("guard serve")}  http://127.0.0.1:${port}/check  ${style.dim(`profile ${o.profile ?? "hot-wallet"} · 127.0.0.1 only · no keys`)}\n`,
+          `\n  ${style.bold("guard serve")}  http://127.0.0.1:${port}/check  ${style.dim(`profile ${o.profile ?? "hot-wallet"} · 127.0.0.1 only · no keys`)}`,
+        );
+        console.log(
+          urls.length
+            ? `  ${style.dim(`own code: read per request from ${urls.map(redactRpc).join(", ")}; ${quorum} must answer, every answer must match`)}\n`
+            : `  ${style.dim("own code: taken from each request (--rpc <url>, repeatable, to read it here instead)")}\n`,
         );
         return new Promise<number>(() => {});
       }

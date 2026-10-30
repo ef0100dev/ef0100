@@ -104,7 +104,7 @@ the data loads. The transaction counts are a dated snapshot, so they stop at the
 | `npx ef0100 sol <signature>` | A Solana transaction before signing: durable nonces, Assign, SetAuthority, Approve, stake authorities, loader upgrades, Squads vault messages. |
 | `npx ef0100 sol nonces <pubkey>` | Every durable-nonce account a key controls: the signatures that never expire. |
 | `npx ef0100 oracle` | Signs the 32-byte digest of tuple #15 with a public test key and reads it back as a valid authorization. |
-| `npx ef0100 guard serve` | The guard on `127.0.0.1:8787/check` for a signer in any language: send the bytes, get `{allow, kind, reasons}`. No keys, localhost only. |
+| `npx ef0100 guard serve` | The guard on `127.0.0.1:8787/check` for a signer in any language: send the bytes, get `{allow, kind, reasons}`. No keys, localhost only. `--rpc` (repeatable) reads the signer's own code itself and needs every answer to match. |
 | `npx ef0100 guard test` | The guard against the incident's tuples, digests, rehearsal tuples and the wallet's own clear. |
 
 The full reference, with flags and exit codes, is in [docs/cli.md](docs/cli.md).
