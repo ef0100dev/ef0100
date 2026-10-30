@@ -53,6 +53,7 @@ jobs:
       - run: for d in 2026-10-29 registry solana; do (cd fixtures/$d && sha256sum -c SHA256SUMS) || exit 1; done
       - id: pack
         run: |
+          mkdir -p dist-pack
           npm pack --ignore-scripts --pack-destination dist-pack
           f=$(ls dist-pack/*.tgz)
           echo "tarball=$(basename "$f")" >> "$GITHUB_OUTPUT"
