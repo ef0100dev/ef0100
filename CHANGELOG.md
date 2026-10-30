@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.12 — 2026-10-30
+
 - `guard serve --rpc <url>` (repeatable, with `--quorum`): the server reads the signer's own code itself on every
   request, every answer must match, and the request's own `ownCode` counts as one more answer. Responses add
   `ownCodeAnswers`. Library: `createGuardServer(guard, { ownCode: { urls, quorum } })`, `serverOwnCode`. Malformed

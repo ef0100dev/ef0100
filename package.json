@@ -1,6 +1,6 @@
 {
   "name": "ef0100",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Decode, replay and refuse EIP-7702 delegations. Built from the bytes of the 2026-10-29 hot-wallet drain.",
   "type": "module",
   "license": "MIT",
