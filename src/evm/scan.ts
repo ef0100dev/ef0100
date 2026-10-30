@@ -3,7 +3,7 @@ import { CHAINS, type Chain } from "./chains.js";
 import { parseDelegation } from "./eip7702.js";
 import { fingerprintCode, type CodeFingerprint } from "./fingerprint.js";
 import { lookupCodehash, lookupDelegate, type DelegateEntry } from "./registry.js";
-import { cleanText, redactRpc, rpcBatch, rpcBatchAny, type RpcOptions } from "./rpc.js";
+import { cleanText, rpcBatchAll, rpcBatchAny, type RpcOptions } from "./rpc.js";
 
 export type ScanState = "eoa" | "delegated" | "contract" | "error";
 
@@ -69,18 +69,8 @@ export async function scanAddresses(addresses: string[], opts: ScanOptions = {})
   return { rows, exitCode };
 }
 
-/** Every endpoint at once; the answers of those that answered, in endpoint order. Throws only when none did. */
-async function askAll(urls: string[], calls: { method: string; params: unknown[] }[], opts: RpcOptions) {
-  const settled = await Promise.allSettled(urls.map((u) => rpcBatch(u, calls, opts)));
-  const ok = settled.flatMap((r, i) =>
-    r.status === "fulfilled" ? [{ endpoint: redactRpc(urls[i]!), results: r.value }] : [],
-  );
-  if (!ok.length) throw (settled[0] as PromiseRejectedResult).reason;
-  return ok;
-}
-
 /** The code to believe when endpoints differ: a delegation over other code, any code over none. */
-function strongest(codes: Uint8Array[]): Uint8Array {
+export function strongestCode(codes: Uint8Array[]): Uint8Array {
   return codes.find((c) => parseDelegation(c)) ?? codes.find((c) => c.length > 0) ?? codes[0]!;
 }
 
@@ -93,7 +83,7 @@ async function scanChain(chain: Chain, addresses: string[], opts: ScanOptions): 
   let answers: { endpoint: string; results: unknown[] }[];
   try {
     answers = opts.crossCheck
-      ? await askAll(chain.rpc, calls, opts)
+      ? await rpcBatchAll(chain.rpc, calls, opts)
       : [{ endpoint: "", results: await rpcBatchAny(chain.rpc, calls, opts) }];
   } catch (e) {
     return addresses.map((address) => ({ chain: meta, address, state: "error" as const, error: (e as Error).message }));
@@ -114,7 +104,7 @@ async function scanChain(chain: Chain, addresses: string[], opts: ScanOptions): 
     });
     if (!seen.length)
       return { chain: meta, address, state: "error", error: "the endpoint returned a malformed result" };
-    const code = strongest(seen.map((x) => x.code));
+    const code = strongestCode(seen.map((x) => x.code));
     const nonce = seen.find((x) => x.code === code)!.nonce;
     const differ = new Set(seen.map((x) => bytesToHex(x.code))).size > 1;
     const extra = differ ? { disagreement: seen.map((x) => ({ endpoint: x.endpoint, code: bytesToHex(x.code) })) } : {};

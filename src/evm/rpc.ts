@@ -100,6 +100,26 @@ export async function rpcBatchAny(urls: string[], calls: RpcCall[], opts: RpcOpt
   throw new RpcError(`every endpoint failed (${errors.join("; ")})`, urls[0] ?? "");
 }
 
+/**
+ * Sends the batch to every endpoint at once and returns the answers of those that answered, in endpoint order, each
+ * named by host only. Throws only when none did. For reads where one endpoint must not decide alone.
+ */
+export async function rpcBatchAll(
+  urls: string[],
+  calls: RpcCall[],
+  opts: RpcOptions = {},
+): Promise<{ endpoint: string; results: unknown[] }[]> {
+  const settled = await Promise.allSettled(urls.map((u) => rpcBatch(u, calls, opts)));
+  const ok = settled.flatMap((x, i) =>
+    x.status === "fulfilled" ? [{ endpoint: redactRpc(urls[i]!), results: x.value }] : [],
+  );
+  if (ok.length) return ok;
+  const errors = settled.map(
+    (x, i) => `${redactRpc(urls[i]!)}: ${((x as PromiseRejectedResult).reason as Error).message}`,
+  );
+  throw new RpcError(`every endpoint failed (${errors.join("; ")})`, urls[0] ?? "");
+}
+
 export async function rpc<T>(urls: string[], method: string, params: unknown[], opts: RpcOptions = {}): Promise<T> {
   const [r] = await rpcBatchAny(urls, [{ method, params }], opts);
   return r as T;

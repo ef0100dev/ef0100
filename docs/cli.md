@@ -145,6 +145,10 @@ Should funds go here right now? Holds the transfer when the address is delegated
 `isBlacklisted`) and on Base and Optimism (Circle's `isBlacklisted`). Anywhere else, or when a call fails, the output
 says the blacklist was not checked; it never reports an unread blacklist as clean.
 
+`--cross-check` asks every endpoint of the chain. A delegation or code any one of them sees is used, a blacklist hit
+from any one counts, and when they return different code the transfer is held with `ENDPOINTS_DISAGREE`, even if the
+delegate is one you allowed.
+
 ### `clear <address>`
 
 The unsigned self-sponsored type-4 transaction that clears a delegation: the authorization to sign first (address
