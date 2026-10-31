@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.16 — 2026-10-31
+
 - GitHub Action: `cross-check: "true"` runs `scan --cross-check` (needs `version` 0.1.13 or later); any other value
   than true or false fails the step with 64. CI runs the action that way against Ethereum and Base.
 
