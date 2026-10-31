@@ -83,7 +83,7 @@ options
                        avalanche, scroll
   --chains <k,k>       scan only these chains (default: all of them)
   --rpc <url>          your own endpoint for --chain (also EF0100_RPC_<CHAIN>, e.g. EF0100_RPC_ETHEREUM);
-                       repeatable; owncode and guard serve then ask only these
+                       repeatable; owncode, guard serve and classify then ask only these
   --watch <address>    decode: critical finding when this address signs an authorization (repeatable)
   --allow <address>    scan, watch: a delegate you set on purpose does not count (repeatable)
   --cross-check        scan, watch, recipient: ask every endpoint of the chain; one that sees a delegation is
@@ -94,8 +94,10 @@ options
   --profile <name>     classify: hot-wallet (default) or user
   --digest             classify: the hex is a bare 32-byte digest, not a preimage
   --signer <address>   classify: the key being asked; --nonce <n> its pending nonce; --self for nonce + 1
-  --own-code <hex>     classify: eth_getCode of the signer's own address (default 0x, none)
-  --quorum <n>         owncode, guard serve: how many endpoints must answer (default 2; every answer must match)
+  --own-code <hex>     classify: eth_getCode of the signer's own address (default 0x, none; with --signer and
+                       --rpc it is read from those endpoints, every answer must match)
+  --quorum <n>         owncode, guard serve, classify: how many endpoints must answer (default 2; every answer
+                       must match)
   --speed <n>          replay animation speed; 0 prints the final frame (default when not a terminal)
   --json               machine-readable output
 
@@ -558,8 +560,23 @@ async function main(argv: string[]): Promise<number> {
           allowDelegates: [...(base.authorizations?.allowDelegates ?? []), ...extra],
         },
       };
-      const ownCode = o["own-code"] ?? "0x";
-      if (!/^0x([0-9a-fA-F]{2})*$/.test(ownCode)) usage("--own-code is the hex of eth_getCode on the key's address");
+      const urls = o.rpc ?? [];
+      const readOwn = o["own-code"] === undefined && urls.length > 0;
+      if (readOwn && !(o.signer && isAddress(o.signer)))
+        usage("--rpc reads the signer's own code: pass --signer <address>");
+      const quorum = o.quorum === undefined ? Math.min(2, urls.length) : Number(o.quorum);
+      if (readOwn && (!Number.isInteger(quorum) || quorum < 1 || quorum > urls.length))
+        usage(`--quorum is 1 to ${urls.length}, the --rpc endpoints given`);
+      const answers = readOwn ? await ownCodeAnswers(o.signer!, urls) : [];
+      let ownCode: string | undefined = o["own-code"] ?? (readOwn ? undefined : "0x");
+      if (readOwn)
+        try {
+          ownCode = agreedOwnCode(answers, quorum);
+        } catch (e) {
+          if (!(e instanceof OwnCodeUnconfirmed)) throw e;
+        }
+      if (ownCode !== undefined && !/^0x([0-9a-fA-F]{2})*$/.test(ownCode))
+        usage("--own-code is the hex of eth_getCode on the key's address");
       const d = new Guard(policy).check(
         input,
         { as: o.digest ? "digest" : "preimage" },
@@ -567,10 +584,11 @@ async function main(argv: string[]): Promise<number> {
           signer: o.signer,
           nonce: o.nonce ? BigInt(o.nonce) : undefined,
           selfSponsored: o.self,
-          ownCode: ownCode as `0x${string}`,
+          ...(ownCode !== undefined ? { ownCode: ownCode as `0x${string}` } : {}),
         },
       );
-      if (o.json) return (console.log(json(d)), d.allow ? EXIT.ok : EXIT.refused);
+      if (o.json)
+        return (console.log(json(readOwn ? { ...d, ownCodeAnswers: answers } : d)), d.allow ? EXIT.ok : EXIT.refused);
       const c = d.classified;
       console.log("");
       console.log(`  ${style.dim(pad("kind", 10))}${c.kind}`);
@@ -594,9 +612,13 @@ async function main(argv: string[]): Promise<number> {
       console.log(
         `  ${style.dim(pad("verdict", 10))}${d.allow ? style.green("SIGN") : style.red(style.bold("REFUSE"))}  ${style.dim(`profile ${o.profile ?? "hot-wallet"}`)}`,
       );
-      if (o["own-code"] === undefined)
+      if (readOwn)
         console.log(
-          `  ${pad("", 10)}${style.dim("own code assumed empty; pass --own-code <eth_getCode of the signer> to check that too")}`,
+          `  ${pad("", 10)}${style.dim(`own code ${ownCode === undefined ? "not confirmed" : ownCode === "0x" ? "empty" : short(ownCode, 18, 4)} (${answers.map((a) => `${a.endpoint.replace(/^https?:\/\//, "")} ${a.code === undefined ? "no answer" : a.code === "0x" ? "0x" : short(a.code, 10, 4)}`).join(", ")})`)}`,
+        );
+      else if (o["own-code"] === undefined)
+        console.log(
+          `  ${pad("", 10)}${style.dim("own code assumed empty; pass --own-code <hex>, or --signer with --rpc to read it")}`,
         );
       for (const r of d.reasons)
         console.log(

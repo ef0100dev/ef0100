@@ -100,6 +100,9 @@ What a key is being asked to sign, and whether the guard would sign it.
   transaction is refused either way.
 - `--signer <address>`, `--nonce <n>`, `--self` (self-sponsored: the authorization carries nonce + 1).
 - `--own-code <hex>`: `eth_getCode` of the signer's own address. Defaults to `0x` (none), and the output says so.
+- `--rpc <url>` (repeatable) with `--signer` and no `--own-code`: reads the own code from those endpoints; every answer
+  must match and at least `--quorum` (default 2) must answer, or no own code is passed and the hot-wallet profile
+  refuses with `CONTEXT_MISSING`. The output, and `ownCodeAnswers` in `--json`, show what each endpoint said.
 - `--profile hot-wallet|user`, `--allow-delegate <address>` (repeatable).
 
 ### `guard serve`

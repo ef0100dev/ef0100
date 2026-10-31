@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- `classify --signer <address> --rpc <url> --rpc <url>`: reads the signer's own code from those endpoints instead of
+  assuming `0x`; every answer must match, or the hot-wallet profile refuses with `CONTEXT_MISSING`. `--json` adds
+  `ownCodeAnswers`.
+
 ## 0.1.16 — 2026-10-31
 
 - GitHub Action: `cross-check: "true"` runs `scan --cross-check` (needs `version` 0.1.13 or later); any other value
