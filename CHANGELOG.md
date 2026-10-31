@@ -5,6 +5,8 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+## 0.1.17 — 2026-10-31
+
 - `classify --signer <address> --rpc <url> --rpc <url>`: reads the signer's own code from those endpoints instead of
   assuming `0x`; every answer must match, or the hot-wallet profile refuses with `CONTEXT_MISSING`. `--json` adds
   `ownCodeAnswers`.
