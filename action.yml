@@ -19,7 +19,7 @@ inputs:
   version:
     description: The ef0100 version to run from npm.
     required: false
-    default: "0.1.15"
+    default: "0.1.16"
   fail-on-unreachable:
     description: Fail when a chain does not answer (exit 69) instead of warning.
     required: false
