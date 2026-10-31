@@ -87,4 +87,36 @@ describe.skipIf(!existsSync(cli))("ef0100 owncode", () => {
   it("rejects a quorum larger than the endpoints asked", async () => {
     expect((await owncode(...rpc("none1"), "--quorum", "2")).exit).toBe(64);
   });
+
+  it("classify --signer --rpc reads the own code itself: agreement signs the clear, a mismatch refuses it", async () => {
+    const { authorizationPreimage, bytesToHex } = await import("../src/index.ts");
+    const clear = bytesToHex(
+      authorizationPreimage({ chainId: 1n, address: "0x0000000000000000000000000000000000000000", nonce: 18914809n }),
+    );
+    const classify = async (...args: string[]) => {
+      try {
+        const { stdout } = await run(
+          "node",
+          [cli, "classify", clear, "--signer", B14, "--nonce", "18914809", "--json", ...args],
+          { encoding: "utf8" },
+        );
+        return { exit: 0, out: JSON.parse(stdout) };
+      } catch (e) {
+        const x = e as { code: number; stdout: string };
+        return { exit: x.code, out: x.stdout ? JSON.parse(x.stdout) : null };
+      }
+    };
+    const ok = await classify(...rpc("none1", "none2"));
+    expect(ok.exit).toBe(0);
+    expect(ok.out.ownCodeAnswers).toHaveLength(2);
+    const split = await classify(...rpc("none1", "del1"));
+    expect(split.exit).toBe(2);
+    expect(split.out.reasons.map((r: { code: string }) => r.code)).toContain("CONTEXT_MISSING");
+    try {
+      await run("node", [cli, "classify", clear, "--rpc", eps.none1!.url], { encoding: "utf8" });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as { code: number }).code).toBe(64);
+    }
+  });
 });
