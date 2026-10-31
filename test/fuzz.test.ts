@@ -5,6 +5,7 @@ import { authorizationPreimage, recoverAuthority } from "../src/evm/eip7702.ts";
 import { RlpError, rlpDecode, rlpEncode, type RlpItem } from "../src/evm/rlp.ts";
 import { decodeTransaction } from "../src/evm/tx.ts";
 import { Guard, profiles } from "../src/guard/policy.ts";
+import { BadRequest, decide } from "../src/guard/serve.ts";
 import { rawFix } from "./helpers.ts";
 
 // Seeded, so a failure names the exact input that caused it. EF0100_FUZZ_RUNS raises the count; the default keeps the
@@ -175,6 +176,77 @@ describe(`fuzz (seed ${SEED}, ${RUNS} runs)`, () => {
         });
         expect(ours.ok && ours.authority.toLowerCase()).toBe(account.address.toLowerCase());
       }
+    },
+    LIMIT,
+  );
+
+  it(
+    "guard serve answers any JSON body with a decision or a 400, and never allows a request without a preimage",
+    () => {
+      const r = rng(SEED + 9);
+      const g = new Guard(profiles.hotWallet);
+      const B14 = "0x28C6c06298d514Db089934071355E5743bf21d60";
+      const clear = bytesToHex(
+        authorizationPreimage({ chainId: 1n, address: "0x0000000000000000000000000000000000000000", nonce: 18914809n }),
+      );
+      const tuple15 = bytesToHex(
+        authorizationPreimage({ chainId: 1n, address: "0x63e842B054Bd624a465454D533C33F573e9c6fAe", nonce: 18914809n }),
+      );
+      const real = [clear, tuple15, "0x", "18914809"];
+      const hex = (n: number) => bytesToHex(bytes(r, n));
+      const value = (depth = 0): unknown => {
+        switch (int(r, 12)) {
+          case 0:
+            return null;
+          case 1:
+            return r() < 0.5;
+          case 2:
+            return int(r, 2) ? int(r, 2 ** 31) : -int(r, 1000) - 0.5;
+          case 3:
+            return hex(int(r, 80));
+          case 4:
+            return "0x" + "zz".repeat(int(r, 4));
+          case 5:
+            return real[int(r, real.length)];
+          case 6:
+            return String(int(r, 2 ** 31));
+          case 7:
+            return depth < 2 ? Array.from({ length: int(r, 3) }, () => value(depth + 1)) : [];
+          case 8:
+            return depth < 2 ? body(depth + 1) : {};
+          case 9:
+            return B14;
+          case 10:
+            return "0x" + int(r, 2 ** 31).toString(16);
+          default:
+            return "x".repeat(int(r, 40));
+        }
+      };
+      const KEYS = ["preimage", "digest", "signer", "nonce", "ownCode", "selfSponsored", "curve", "extra"];
+      const body = (depth = 0): Record<string, unknown> =>
+        Object.fromEntries(KEYS.filter(() => r() < 0.5).map((k) => [k, value(depth)]));
+      let decided = 0;
+      let rejected = 0;
+      for (let i = 0; i < RUNS; i++) {
+        const b = int(r, 10) === 0 ? value() : body();
+        let d: ReturnType<typeof decide> | undefined;
+        try {
+          d = decide(g, b);
+          decided++;
+        } catch (e) {
+          expect(e, `run ${i}: ${JSON.stringify(b)?.slice(0, 200)}`).toBeInstanceOf(BadRequest);
+          rejected++;
+          continue;
+        }
+        if (d.allow) {
+          const req = b as Record<string, unknown>;
+          expect(typeof req.preimage, `run ${i}`).toBe("string");
+          expect(typeof req.ownCode, `run ${i}`).toBe("string");
+          if (req.ownCode !== "0x") expect(req.preimage, `run ${i}: own code present, only the clear`).toBe(clear);
+        }
+      }
+      expect(decided).toBeGreaterThan(0);
+      expect(rejected).toBeGreaterThan(0);
     },
     LIMIT,
   );

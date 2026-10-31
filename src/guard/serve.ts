@@ -17,7 +17,7 @@ export interface CheckRequest {
   curve?: "secp256k1" | "ed25519";
 }
 
-class BadRequest extends Error {}
+export class BadRequest extends Error {}
 
 function toNonce(n: CheckRequest["nonce"]): bigint | undefined {
   if (n === undefined || n === null) return undefined;

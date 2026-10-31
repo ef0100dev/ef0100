@@ -5,6 +5,10 @@ the CLI output, reason codes or exit codes, and says so here.
 
 ## Unreleased
 
+- Tests: `guard serve` body fuzz in the nightly job: random JSON bodies (wrong types, bad hex, nesting, real preimages)
+  get a decision or a 400, never another error, and an allowed request always carried a preimage and an own code
+  (only the self-clear while that code is non-empty). `BadRequest` is exported from `ef0100`'s serve module.
+
 ## 0.1.17 — 2026-10-31
 
 - `classify --signer <address> --rpc <url> --rpc <url>`: reads the signer's own code from those endpoints instead of
